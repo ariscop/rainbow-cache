@@ -54,8 +54,16 @@ class entry {
 	protected $name  = '';
 	protected $stored = false;
 	
+	//the entrys path
 	private $filename = null;
+	
+	//any files that have to be cleaned with the entry
 	private $files = array();
+	
+	//file pointer for locking
+	private $file = false;
+	//and status of the lock
+	private $locked = false;
 	
 	function stored() {
 		return $this->stored;
@@ -65,6 +73,31 @@ class entry {
 		return basename($this->filename);
 	}
 	
+	/**
+	 * Create and lock the cache entry. the lock will fail if
+	 * the entry already exists on disk. this is intended to be
+	 * used to start a transaction which is finilized by store()
+	 * this call should not block. 
+	 * @return true if the lock was successfull, otherwise false
+	 */
+	function lock() {
+		$file = @fopen($this->filename, 'x');
+		if($file !== false) {
+			flock($file, LOCK_EX);
+			$this->file = $file;
+			$this->locked = true;
+			return true;
+		}
+		return false;
+	}
+	
+	/**
+	 * Store the cache entry
+	 * if lock has been called this function finilizes the transaction
+	 * otherwise it writes the contents with file_put_contents with
+	 * the LOCK_EX flag set
+	 * @return nothing
+	 */
 	function store() {
 		$dir = dirname($this->filename);
 		
@@ -72,8 +105,31 @@ class entry {
 			mkdir($this->dir, 0750, true);
 		
 		$this->stored = true;
-		file_put_contents($this->filename, serialize($this), LOCK_EX);
+		
+		$text = serialize($this);
+		
+		if($file === false) {
+			file_put_contents($this->filename, serialize($text), LOCK_EX);
+		} else {
+			ftruncate($this->file, 0);
+ 			fwrite($this->file, $text);
+ 			fflush($this->file);
+ 			flock($this->file, LOCK_UN);
+ 			fclose($this->file);
+ 			$this->locked = false;
+		}
 	}
+	
+// 	/**
+// 	 * Remove the lock if any from the cache entry.
+// 	 * this does not remove the file and subsequent
+// 	 * calls to lock() will fail. 
+// 	 * @return nothing
+// 	 */
+// 	function unlock() {
+// 		@flock($file, LOCK_UN);
+// 		$this->locked = false; 
+// 	}
 	
 	function retrive() {
 		if (is_file($this->filename)) {
@@ -94,22 +150,17 @@ class entry {
 		$dir = $config->getPath();
 		$this->filename = $dir . '/' . $this->type . ':' . md5($this->name);
 	}
-}
-
-class page extends entry {	
-	function __construct($uri = null) {
-		if($uri === null) {
-			$this->name = $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
-		} else {
-			$this->name = $uri;
-		} 
-		
-		$this->type = 'page';
-		
-		parent::__construct();
-		
+	
+	function __destruct() {
+		if($this->file !== null) {
+			@flock($file, LOCK_UN);
+			@fclose($file);
+		}
 	}
 	
+}
+
+class page extends entry {		
 	function retrive() {
 		$a = parent::retrive();
 		if($a instanceof page)
@@ -149,7 +200,42 @@ class page extends entry {
 	function hasHeaders() {
 		return isset($this->data['headers']);
 	}
+	
+	function __construct($uri = null) {
+		if($uri === null) {
+			$this->name = $_SERVER['HTTP_HOST'] . $_SERVER['REQUEST_URI'];
+		} else {
+			$this->name = $uri;
+		}
+	
+		$this->type = 'page';
+	
+		parent::__construct();
+	}
+	
+	static function generateFooter($start, $time, $name) {
+		return <<<EOF
+
+<!-- Rainbow Cache           ▄▄
+     20% Cooler!        █▀▀▄█░░█▄        ▄▄▄▄▀▀▀▀▀▀▄
+                        ▀▄░░██░░█  █▀▀▀▀▀▓▓▓▓▓▓▒▓▄▄▓▀▄
+    ▄▄▄▄▄▄ █▄           ▄▄█░░▀▄░█ ▄▄█▀▄▄▀▀█▒▒▒▄▄▀░▀▀██
+  ▄█▀▀▀▀▀▀██▓█          █░▀█░░█░█▀▀▄▄█░░░▄▀▀▀▀░░░░░░░█
+▄█▄▄▄░░░▒▒▒▀█▓█         ▀▄░█▀█▀▀█▀▄█▄▄▄▀░░░░▀▀█▀▀██░█
+      ▀▀▄▓▓▓▒▒█▄▀▄     ▄▄█▀▀▄░░░█      █░░░░░░ ▀███░░░█▄
+         ▀▄▄▓░▒▒▀█▄█▀▀▀▀▒▀█▄█▀░░█▀▀▀▀▀░█░░░░░░░░░░░▄░█
+         ▀▀▄▄▓▓░░░░░▓▓▓▓▄█ ▀▄▄░▀░░░░░░░░░▄▄▄▄▄▄▄▄▄▄▀▀
+              ▀▄▓▓▓▓▓▄▄▄▀  █▓▒░░░░░░░░░░░█▄▀▀▀█▄▄▄▄▄▄▄
+                ▀▀▀▀▀   ▄▀█░▓▒░░░░▄░░░█░▀░▄▄░░█▒▒▒▒▒▒▒█
+Art by anon.        ▄▄▄▀▀░░░░░░░░▄██▀▀▀▀▀▀█▀░░█▀▀▀▄▄▄▀
+if you know the    █░░░░░▄▄▀█▄▄▄▀▀         █░░░█
+artist, contact me █░░▄▄█▒▒▄▀               █░▄▀
+                   ▀▀▀  ▀▀▀                  ▀
+This page was generated on ${start} and
+took ${time} seconds to generate.
+Cache Entry: ${name}
+-->\n
+EOF;
+	}
 }
-
-
 

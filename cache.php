@@ -14,9 +14,6 @@ if(!$config->enabled)
 	//disabled
 	return;
 
-//retrive the cache entry
-$page = page::getEntry();
-
 function setStatus($a) {
 	global $config;
 	if($config->addHeader)
@@ -41,6 +38,9 @@ if(hasCookie('wordpress_logged_in') === true) {
 //until further notice ignore every non-get request
 if($_SERVER['REQUEST_METHOD'] != 'GET') return;
 
+
+//retrive the cache entry
+$page = page::getEntry();
 
 // if cache entry is valid serve here
 if($page->stored() && $page->hasHtml()) {
@@ -85,6 +85,8 @@ $callback = function($buffer) use ($page, $config, $redirectUrl) {
 	//inform the client that the page is being generated
 	setStatus('Miss');
 	
+	//generate and append the footer
+	//TODO: this broke again
 	$start = $page->data['start'];
 	$time  = microtime(true) - $start;	
 	
@@ -95,28 +97,11 @@ $callback = function($buffer) use ($page, $config, $redirectUrl) {
 	
 	$name = $page->getFilename();
 	
-	$buffer = $buffer . <<<EOF
-
-<!-- Rainbow Cache           ▄▄
-     20% Cooler!        █▀▀▄█░░█▄        ▄▄▄▄▀▀▀▀▀▀▄
-                        ▀▄░░██░░█  █▀▀▀▀▀▓▓▓▓▓▓▒▓▄▄▓▀▄
-    ▄▄▄▄▄▄ █▄           ▄▄█░░▀▄░█ ▄▄█▀▄▄▀▀█▒▒▒▄▄▀░▀▀██
-  ▄█▀▀▀▀▀▀██▓█          █░▀█░░█░█▀▀▄▄█░░░▄▀▀▀▀░░░░░░░█
-▄█▄▄▄░░░▒▒▒▀█▓█         ▀▄░█▀█▀▀█▀▄█▄▄▄▀░░░░▀▀█▀▀██░█
-      ▀▀▄▓▓▓▒▒█▄▀▄     ▄▄█▀▀▄░░░█      █░░░░░░ ▀███░░░█▄
-         ▀▄▄▓░▒▒▀█▄█▀▀▀▀▒▀█▄█▀░░█▀▀▀▀▀░█░░░░░░░░░░░▄░█
-         ▀▀▄▄▓▓░░░░░▓▓▓▓▄█ ▀▄▄░▀░░░░░░░░░▄▄▄▄▄▄▄▄▄▄▀▀
-              ▀▄▓▓▓▓▓▄▄▄▀  █▓▒░░░░░░░░░░░█▄▀▀▀█▄▄▄▄▄▄▄
-                ▀▀▀▀▀   ▄▀█░▓▒░░░░▄░░░█░▀░▄▄░░█▒▒▒▒▒▒▒█
-Art by anon.        ▄▄▄▀▀░░░░░░░░▄██▀▀▀▀▀▀█▀░░█▀▀▀▄▄▄▀
-if you know the    █░░░░░▄▄▀█▄▄▄▀▀         █░░░█
-artist, contact me █░░▄▄█▒▒▄▀               █░▄▀
-                   ▀▀▀  ▀▀▀                  ▀
-This page was generated on ${start} and
-took ${time} seconds to generate.
-Cache Entry: ${name}
--->\n
-EOF;
+	$buffer = $buffer . page::generateFooter($start, $time, $name);
+	//technically unnecessary but ponies
+	
+	//if a lock cant be aquired don't wait, assume it's being cached already
+	if(!$page->lock()) goto done;
 	
 	$headers = headers_list();
 	if(is_array($headers)) {
