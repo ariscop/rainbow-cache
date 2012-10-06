@@ -107,7 +107,7 @@ printBool('addHeader', 'Add cache status headers');
 printString('headerName', 'Status header name', 'this will show in http response headers');
 printString('path', 'Cache Path:', 'reletive to WP_CONTENT_DIR (' . WP_CONTENT_DIR . ')');
 
-printBool('debug', 'Enable debug mode', 'Don\'t enable unless you know what you\'re doing, cache entrys takes space when enabled');
+printBool('debug', 'Enable debug mode', 'Don\'t enable unless you know what you\'re doing, cache entrys consume more space when enabled');
 ?>
 </tbody>
 </table>
