@@ -22,6 +22,10 @@ class config {
 	//redirect 404's
 	public $redirect_404 = false;
 	
+	//debug mode
+	//currently just saves _SERVER and _COOKIE from the request
+	public $debug = false;
+	
 	function getPath() {
 		return WP_CONTENT_DIR . $this->path;
 	}
@@ -46,6 +50,8 @@ if(!($config instanceof Config)) {
 	$config = new Config();
 }
 
+//TODO: limit cache size? atomic opperations on a list
+//TODO: will be pain in pure php
 class entry {
 	//data goes here
 	public $data = array();

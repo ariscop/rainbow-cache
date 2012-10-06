@@ -122,11 +122,8 @@ ob_start($callback);
 $page->data['start'] = microtime(true);
 
 
-/*
-//define('CACHE_DEBUG', true);
-//
-//if(defined('CACHE_DEBUG')) {
-//	$data['_server'] = clone $_SERVER;
-//	$data['_cookie'] = clone $_COOKIE;
-//}
-*/
+if($config->saveVars) {
+	$page->data['_server'] = clone $_SERVER;
+	$page->data['_cookie'] = clone $_COOKIE;
+}
+

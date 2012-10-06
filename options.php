@@ -2,52 +2,120 @@
 
 require_once("cache-config.php");
 
+?>
+<div class="wrap">
+<a name="rainbow-cache"></a>
+<h2>Rainbow Cache</h2>
+<p>Serving your pages in 10<sup>-5</sup> seconds flat</p>
+<?php
+
 if (isset($_POST['purge'])) {
 	purgeCache();
-	echo 'Cache purged';
+	echo '<div class="updated"><p> Cache Purged </p></div>';
 }
 
-if (isset($_POST['save'])) {
-	$config->enabled = 
-		isset($_POST['enabled']) ? true : false;
+function checkBool($name) {
+	global $config;
 	
-	$config->addHeader =
-		isset($_POST['addHeader']) ? true : false;
+	$config->$name = 
+		isset($_POST[$name]) ? true : false;
+}
+
+function checkString($name) {
+	global $config;
 	
-	if(isset($_POST['path']))
-		$config->path = $_POST['path'];
-	
-	$config->default = false;
-	
+	if(isset($_POST[$name]))
+		$config->$name = $_POST[$name];
+}
+
+if (isset($_POST['reset'])) {
+	$config = new config();
+		
 	//save to disk
 	$ret = $config->save();
 	if($ret === false)
-		echo '<div class="e-banner"> Failed to write config file</div>';
+		echo '<div class="updated"><p> Failed to write config file</p></div>';
 	else
-		echo '<div class="banner">Config saved (',$ret,' bytes)</div>';
-	
+		echo '<div class="updated"><p>Config saved (',$ret,' bytes)</p></div>';
+}
+
+if (isset($_POST['save'])) {
+	//need better way to do this
+
+	checkBool('enabled');
+	checkBool('addHeader');
+	checkBool('debug');
+	checkBool('redirect_404');
+	checkString('headerName');
+	checkString('path');
+
+	$config->default = false;
+
+	//save to disk
+	$ret = $config->save();
+	if($ret === false)
+		echo '<div class="updated"><p> Failed to write config file</p></div>';
+	else
+		echo '<div class="updated"><p>Config saved (',$ret,' bytes)</p></div>';
+
 } elseif(!$valid) {
-	echo 'Invalid config';
+?><div class="updated"><p> Configuration file is invalid, please configure and save </p></div><?php
+}
+
+//ye gods this is a mess
+
+function printBool($name, $title, $description='') {
+	global $config;
+?><tr valign="top">
+	<th scope="row"> <?php echo $title; ?></th>
+		<td>
+			<fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
+				<label for="<?php echo $name;?>">
+					<input name="<?php echo $name;?>" type="checkbox" id="<?php echo $name;?>" value="1" <?php echo (($config->$name)?'checked':''); ?> />
+					<?php echo $description; ?>
+				</label><br />
+			</fieldset>
+		</td>
+</tr><?php
+}
+
+function printString($name, $title, $description='') {
+	global $config;
+?><tr valign="top">
+	<th scope="row"> <?php echo $title; ?></th>
+		<td>
+			<fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
+				<label for="<?php echo $name;?>">
+					<input name="<?php echo $name;?>" type="text" id="<?php echo $name;?>" value="<?php echo $config->$name; ?>" />
+					<?php echo $description; ?>
+				</label><br />
+			</fieldset>
+		</td>
+</tr><?php
 }
 
 ?>
-<h1>Rainbow Cache</h1>
-
 <form method="post" action="">
 <?php wp_nonce_field(); ?>
 
-Enable Cache: 
-<input type="checkbox" name="enabled" value="1" 
-	<?php echo ($config->enabled)?'checked':''; ?> /><br/>
+<table class='form-table'>
+<tbody>
+<?php  
+printBool('enabled', 'Enable Cache');
+printBool('redirect_404', 'Redirect 404', 'this saves a bit of cpu time by redirecting to /404/'); 
+printBool('addHeader', 'Add cache status headers');
+printString('headerName', 'Status header name', 'this will show in http response headers');
+printString('path', 'Cache Path:', 'reletive to WP_CONTENT_DIR (' . WP_CONTENT_DIR . ')');
 
-Add cache-status header: 
-<input type="checkbox" name="addHeader" value="1" 
-	<?php echo ($config->addHeader)?'checked':''; ?> /><br/>
+printBool('debug', 'Enable debug mode', 'Don\'t enable unless you know what you\'re doing, cache entrys takes space when enabled');
+?>
+</tbody>
+</table>
 
-Store path (reletive to <a title="<?php echo WP_CONTENT_DIR; ?>">WP_CONTENT_DIR</a>):
-<input type="text" name="path" value="<?php echo $config->path; ?>" /><br/>
-
-<input type="submit" name="save" value="Save config"><br/>
-<input type="submit" name="purge" value="Purge cache">
+<br/><br/>
+<input type="submit" class="button-primary" name="save" value="Save config">
+<input type="submit" class="button-primary" name="purge" value="Purge cache">
+<input type="submit" class="button-primary" name="reset" value="Reset settings">
 
 </form>
+</div>
