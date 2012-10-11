@@ -28,14 +28,24 @@ function cleanCache()
 		$data->delete();
 	};
 	
-	array_map($callback, glob($config->getStorePath() . '/*'));
+	$dirs = glob($config->getStorePath() . '/*');
+	if($dirs !== false)
+		array_map($callback, $dirs);
 }
 
 function purgeCache()
 {
 	global $config;
 	
+	//disable the cache during the purge
+	$en = $config->enabled;
+	$config->enabled = false;
+	$config->save();
+
 	recursiveRm($config->getPath());
+
+	$config->enabled = $en;
+	$config->save();
 }
 
 
