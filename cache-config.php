@@ -212,8 +212,12 @@ class entry {
 	function retrive() {
 		if (is_file($this->filename)) {
 			$a = unserialize(file_get_contents($this->filename));
-			if($a instanceof entry)
+			if($a instanceof entry) {
+				//files not locked, but can be stored as such
+				//ensure this does not cause problems
+				$a->locked = false;
 				return $a;
+			}
 		}
 		return false;
 	}
