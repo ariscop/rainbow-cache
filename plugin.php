@@ -125,25 +125,11 @@ add_filter('redirect_canonical', '', 10, 2);
  * Misc things
  */
 
-$_404_callback = function ($header) {
-	//this will be called right before the headers are sent
-	//we can catch 404's and cache handle them before page generation
-	if($_SERVER['REQUEST_URI'] != '/404/' && substr($header, 9, 3) == '404') {
-		header('Location: /404/');
-		flush();
-		die();
-	}
-	return $header;
-};
-
-//there is seriously no other way to do this, its anoying
-$_onRedirect = function ($status, $location) use ($redirectUrl) {
-	$redirectUrl = $location;
-	return $status;
-};
 add_filter('wp_redirect_status', $_onRedirect, 10, 2);
-
+add_filter('status_header', $_statusHeaderCallback);
 
 if($config->redirect_404) {
 	add_filter('status_header', $_404_callback, 0, 1);
 }
+
+

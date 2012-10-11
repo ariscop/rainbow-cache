@@ -66,8 +66,36 @@ if(hasCookie('comment_') === true) {
 	return;
 }
 
+$_404_callback = function ($header) {
+	//this will be called right before the headers are sent
+	//we can catch 404's and cache handle them before page generation
+	if($_SERVER['REQUEST_URI'] != '/404/' && substr($header, 9, 3) == '404') {
+		header('Location: /404/');
+		flush();
+		die();
+	}
+	return $header;
+};
+
+$statusHeader = false;
 $redirectUrl = false;
-$callback = function($buffer) use ($page, $config, $redirectUrl) {
+
+//there is seriously no other way to do this, its anoying
+$_onRedirect = function ($status, $location) use (&$redirectUrl) {
+	$redirectUrl = $location;
+	return $status;
+};
+
+//headers_list does not include the status header.
+//php i am disapoint (moreso than useual)
+$_statusHeaderCallback = function ($value) use (&$statusHeader) {
+	$statusHeader = $value;
+	return $value;
+};
+
+//add_filter is run in plugin.php
+
+$callback = function($buffer) use ($page, $config, &$redirectUrl, &$statusHeader) {
 	//Output callback, for when page generation is done
 	
 	//dont cache admin page
@@ -105,7 +133,8 @@ $callback = function($buffer) use ($page, $config, $redirectUrl) {
 	
 	$headers = headers_list();
 	if(is_array($headers)) {
-		unset($headers[$config->headerName]);
+		if($statusHeader !== false)
+			array_unshift($headers, $statusHeader);
 		$page->storeHeaders($headers);
 	}
 	
