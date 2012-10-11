@@ -9,6 +9,11 @@ require_once("cache-config.php");
 <p>Serving your pages in 10<sup>-5</sup> seconds flat</p>
 <?php
 
+if (isset($_POST['clean'])) {
+	cleanCache();
+	echo '<div class="updated"><p> Cache Cleaned </p></div>';
+}
+
 if (isset($_POST['purge'])) {
 	purgeCache();
 	echo '<div class="updated"><p> Cache Purged </p></div>';
@@ -43,11 +48,17 @@ if (isset($_POST['save'])) {
 	//need better way to do this
 
 	checkBool('enabled');
-	checkBool('addHeader');
+	checkBool('header');
+	checkBool('footer');
 	checkBool('debug');
 	checkBool('redirect_404');
+	
+	checkBool('static');
+	checkBool('rewrite');
+	
 	checkString('headerName');
 	checkString('path');
+	//checkString('sep');
 
 	$config->default = false;
 
@@ -66,12 +77,14 @@ if (isset($_POST['save'])) {
 
 function printBool($name, $title, $description='') {
 	global $config;
+	//add random string to garuentee uniqueness
+	$dname = 'sdaf34re_' . $name; 
 ?><tr valign="top">
 	<th scope="row"> <?php echo $title; ?></th>
 		<td>
 			<fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
-				<label for="<?php echo $name;?>">
-					<input name="<?php echo $name;?>" type="checkbox" id="<?php echo $name;?>" value="1" <?php echo (($config->$name)?'checked':''); ?> />
+				<label for="<?php echo $dname;?>">
+					<input name="<?php echo $name;?>" type="checkbox" id="<?php echo $dname;?>" value="1" <?php echo (($config->$name)?'checked':''); ?> />
 					<?php echo $description; ?>
 				</label><br />
 			</fieldset>
@@ -81,12 +94,14 @@ function printBool($name, $title, $description='') {
 
 function printString($name, $title, $description='') {
 	global $config;
+	//add random string to garuentee uniqueness
+	$dname = 'sdaf34re_' . $name;
 ?><tr valign="top">
 	<th scope="row"> <?php echo $title; ?></th>
 		<td>
 			<fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
-				<label for="<?php echo $name;?>">
-					<input name="<?php echo $name;?>" type="text" id="<?php echo $name;?>" value="<?php echo $config->$name; ?>" />
+				<label for="<?php echo $dname;?>">
+					<input name="<?php echo $name;?>" type="text" id="<?php echo $dname;?>" value="<?php echo $config->$name; ?>" />
 					<?php echo $description; ?>
 				</label><br />
 			</fieldset>
@@ -100,13 +115,26 @@ function printString($name, $title, $description='') {
 
 <table class='form-table'>
 <tbody>
-<?php  
-printBool('enabled', 'Enable Cache');
-printBool('redirect_404', 'Redirect 404', 'this saves a bit of cpu time by redirecting to /404/'); 
-printBool('addHeader', 'Add cache status headers');
-printString('headerName', 'Status header name', 'this will show in http response headers');
-printString('path', 'Cache Path:', 'reletive to WP_CONTENT_DIR (' . WP_CONTENT_DIR . ')');
+<?php
 
+//TODO: hide some of these as 'advance' options
+printBool('enabled', 'Enable Cache');
+
+ 
+printBool('header', 'Enable status header');
+printString('headerName', 'Status header name', 'this will show in http response headers');
+
+printBool('footer', 'Enable Footer');
+
+printBool('static', 'Enable static caching');
+printBool('rewrite', 'Enable rewrite map');
+//TODO: rewrite map
+//printString('rewritePath', 'Path to rewrite map');
+
+printBool('redirect_404', 'Redirect 404', 'this saves a bit of cpu time by redirecting to /404/');
+//printString('path', 'Cache Path', 'reletive to WP_CONTENT_DIR (' . WP_CONTENT_DIR . ')');
+printString('path', 'Cache Path', 'entries will be stored under /store and static files will be stored in /static');
+//printString('sep', 'Entry delimiter', 'use something other than : on windows');
 printBool('debug', 'Enable debug mode', 'Don\'t enable unless you know what you\'re doing, cache entrys consume more space when enabled');
 ?>
 </tbody>
@@ -114,6 +142,7 @@ printBool('debug', 'Enable debug mode', 'Don\'t enable unless you know what you\
 
 <br/><br/>
 <input type="submit" class="button-primary" name="save" value="Save config">
+<input type="submit" class="button-primary" name="clean" value="Clean cache">
 <input type="submit" class="button-primary" name="purge" value="Purge cache">
 <input type="submit" class="button-primary" name="reset" value="Reset settings">
 

@@ -19,11 +19,25 @@ not endorsed by hasbro, pls no sue kthx
 //register_activation_hook(__FILE__, 'activate');
 //function activate()
 
+function cleanCache()
+{
+	global $config;
+	$callback = function($name) {
+		$data = file_get_contents($name);
+		$data = unserialize($data);
+		$data->delete();
+	};
+	
+	array_map($callback, glob($config->getStorePath() . '/*'));
+}
+
 function purgeCache()
 {
 	global $config;
+	
 	recursiveRm($config->getPath());
 }
+
 
 // register_deactivation_hook(__FILE__, 'deactivate');
 // function deactivate()
@@ -56,11 +70,11 @@ add_action('admin_menu', $_adminCallback);
 
 function recursiveRm($dir, $delself = false) {
 	$files = glob($dir . '/*');
-	
+
 	//WHAT IS THIS I DON'T EVEN
 	if(!is_array($files)) return;
 	if(count($files) === 0) return;
-	
+
     foreach($files as $file) {
         if(is_dir($file))
             recursiveRm($file, true);
@@ -73,28 +87,28 @@ function recursiveRm($dir, $delself = false) {
 
 
 //TODO: auto invalidates
-
-// add_action('switch_theme', '', 0);
-// add_action('edit_post', '', 0);
-// add_action('publish_post', '', 0);
-// add_action('delete_post', '', 0);
-// add_action('transition_comment_status', '', 0, 3);
-// add_action('wp_set_comment_status', '', 0, 2);
-// function on_comment_transition($new_status, $old_status, $comment)
-// {
-// 	invalidatePost($comment->comment_post_ID, 'post');
-// }
-// function on_set_comment_status($comment_id, $comment_status)
-// {
-// 	$comment = get_comment($comment_id);
-// 	invalidatePost($comment->comment_post_ID, 'post');
-// }
-// add_filter('comment_post_redirect', 'hyper_filter_comment_redirect');
-// function filter_commentRedirect($val) {
-// 	return add_query_arg('unmoderated', 'true', $val);
-// }
-// add_filter('redirect_canonical', '', 10, 2);
-
+/*
+add_action('switch_theme', '', 0);
+add_action('edit_post', '', 0);
+add_action('publish_post', '', 0);
+add_action('delete_post', '', 0);
+add_action('transition_comment_status', '', 0, 3);
+add_action('wp_set_comment_status', '', 0, 2);
+function on_comment_transition($new_status, $old_status, $comment)
+{
+	invalidatePost($comment->comment_post_ID, 'post');
+}
+function on_set_comment_status($comment_id, $comment_status)
+{
+	$comment = get_comment($comment_id);
+	invalidatePost($comment->comment_post_ID, 'post');
+}
+add_filter('comment_post_redirect', 'hyper_filter_comment_redirect');
+function filter_commentRedirect($val) {
+	return add_query_arg('unmoderated', 'true', $val);
+}
+add_filter('redirect_canonical', '', 10, 2);
+*/
 
 
 /**

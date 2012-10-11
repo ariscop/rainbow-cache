@@ -6,22 +6,37 @@ class config {
 	//is this the default config?
 	//changed when saved 
 	public $default = true;
-	
+
 	//default to not caching, just in case
 	public $enabled = false;
-	
+
 	//path to cache dir, appended to WP_CONTENT_DIR
 	public $path = '/cache/';
-	
+
 	//add cache-status header
-	public $addHeader = true;
-	
+	public $header = true;
+
 	//name of the cache header if enabled
 	public $headerName = 'Cache-Status';
-	
+
+	//enable ascii art page footer
+	public $footer = true;
+
 	//redirect 404's
 	public $redirect_404 = false;
-	
+
+	//preform static caching using a directory tree
+	public $static = false;
+
+	//or using a RewriteMap
+	public $rewrite = false;
+
+	//seperator for cache entry filenames
+	//i like : but that breaks on nt (alternate data streams)
+	//and aparently on macs (they used to use : as path sep)
+	//changing this to a path seperator should create folders
+	public $sep = ':';
+
 	//debug mode
 	//currently just saves _SERVER and _COOKIE from the request
 	public $debug = false;
@@ -29,14 +44,18 @@ class config {
 	function getPath() {
 		return WP_CONTENT_DIR . $this->path;
 	}
-	
+
+	function getStorePath() {
+		return $this->getPath() . '/store/';
+	}
+
 	function save() {
 		global $configPath;
 		
 		$serialized = serialize($this);
 		return file_put_contents($configPath, $serialized, LOCK_EX);
 	}
-	
+
 }
 
 $valid = true;
@@ -48,6 +67,14 @@ if(file_exists($configPath))
 if(!($config instanceof Config)) {
 	$valid = false;
 	$config = new Config();
+}
+
+if($config->default) {
+	//active defaults
+
+	//prevent : breakage on nt and mac
+	//should work on bsd but meh
+	if(PHP_OS != 'Linux') $config->sep = '_';
 }
 
 //TODO: limit cache size? atomic opperations on a list
@@ -87,9 +114,28 @@ class entry {
 	 * @return true if the lock was successfull, otherwise false
 	 */
 	function lock() {
-		$file = @fopen($this->filename, 'x');
+		global $config;
+		//if already locked just return
+		if($this->locked) return true;
+
+		$dir = dirname($this->filename);
+
+		if(!is_dir($dir))
+			mkdir($dir, 0755, true);
+
+		//this applys to re-opening a file for deletion
+		//or just opening a file for the same reason
+		if($this->stored) {
+			$file = @fopen($this->filename, 'r+');
+		} else {
+			$file = @fopen($this->filename, 'x');
+		}
 		if($file !== false) {
-			flock($file, LOCK_EX);
+			if(flock($file, LOCK_EX) === false) {
+				fclose($this->file);
+				$this->file = false;
+				return false;
+			}
 			$this->file = $file;
 			$this->locked = true;
 			return true;
@@ -105,10 +151,11 @@ class entry {
 	 * @return nothing
 	 */
 	function store() {
+		global $config;
 		$dir = dirname($this->filename);
 		
 		if(!is_dir($dir))
-			mkdir($this->dir, 0750, true);
+			mkdir($dir, 0755, true);
 		
 		$this->stored = true;
 		
@@ -120,22 +167,47 @@ class entry {
 			ftruncate($this->file, 0);
  			fwrite($this->file, $text);
  			fflush($this->file);
- 			flock($this->file, LOCK_UN);
- 			fclose($this->file);
- 			$this->locked = false;
+ 			$this->unlock();
 		}
 	}
 	
-// 	/**
-// 	 * Remove the lock if any from the cache entry.
-// 	 * this does not remove the file and subsequent
-// 	 * calls to lock() will fail. 
-// 	 * @return nothing
-// 	 */
-// 	function unlock() {
-// 		@flock($file, LOCK_UN);
-// 		$this->locked = false; 
-// 	}
+	/**
+	 * Delete this cache entry from the disk
+	 * @return boolean
+	 */
+	function delete() {
+		if(!$this->lock() || $this->file === false) return false;
+	
+		ftruncate($this->file, 0);
+		foreach($this->files as $k => $v) { if($v) {
+			if(is_dir($k)) {
+				@array_map('unlink', glob($k . '/*'));
+				@rmdir($k);
+			} else {
+				@unlink($k);
+			}
+		}}
+	
+		$this->locked = false;
+		$this->stored = false;
+	
+		$ret = @unlink($this->filename);
+		$this->unlock();
+		if($ret === false)
+			@unlink($this->filename);
+	}
+	
+	/**
+	 * Remove the lock if any from the cache entry.
+	 * this does not remove the file and subsequent
+	 * calls to lock() will fail. 
+	 * @return nothing
+	 */
+	function unlock() {
+		@flock($file, LOCK_UN);
+		fclose($this->file);
+		$this->locked = false; 
+	}
 	
 	function retrive() {
 		if (is_file($this->filename)) {
@@ -147,14 +219,14 @@ class entry {
 	}
 	
 	function addFile($filename) {
-		$this->files[] = $filename;
+		$this->files[$filename] = true;
 	}
 	
 	function __construct() {
 		global $config;
 		
-		$dir = $config->getPath();
-		$this->filename = $dir . '/' . $this->type . ':' . md5($this->name);
+		$dir = $config->getStorePath();
+		$this->filename = $dir . $this->type . $config->sep . md5($this->name);
 	}
 	
 	function __destruct() {
@@ -219,7 +291,41 @@ class page extends entry {
 		parent::__construct();
 	}
 	
+	function store() {
+		global $config;
+	
+		$name = null;
+		$path = $config->getPath() . '/static/';
+	
+		//TODO: cache query strings by chainging to $ ?
+		if($config->static && strpos($this->name, '?') === false) {
+		//	store into a dir tree
+			$path = $path . '/' . $this->name;
+			if(!is_dir($path)) mkdir($path, 0755, true);
+			$name = $path . '/index.html';
+			file_put_contents($name, $this->getHtml());
+			$this->addFile($path);
+		} else if ($config->rewrite) {
+			//store in one folder
+			if(!is_dir($path)) mkdir($path, 0755, true);
+			$name = $path . '/' . $this->getFilename() . '.html';
+			file_put_contents($name, $this->getHtml());
+			$this->addFile($name);
+		}
+	
+		if($name && $config->rewrite) {
+			//TODO: rewrite map
+		}
+	
+		//Betwene the begining of this function and the line below is
+		// Garuenteed atomic if (AND ONLY IF) lock() is called before
+		// it will also be unlocked after the parent call
+		parent::store();
+	}
+	
 	static function generateFooter($start, $time, $name) {
+		global $config;
+		if(!$config->footer) return '';
 		return <<<EOF
 
 <!-- Rainbow Cache           ▄▄
