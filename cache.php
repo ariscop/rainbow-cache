@@ -95,7 +95,7 @@ $_statusHeaderCallback = function ($value) use (&$statusHeader) {
 
 //add_filter is run in plugin.php
 
-$callback = function($buffer) use ($page, $config, &$redirectUrl, &$statusHeader) {
+$callback = function($buffer) use ($page, &$config, &$redirectUrl, &$statusHeader) {
 	//Output callback, for when page generation is done
 	
 	//dont cache admin page
@@ -127,7 +127,7 @@ $callback = function($buffer) use ($page, $config, &$redirectUrl, &$statusHeader
 	
 	$buffer = $buffer . page::generateFooter($start, $time, $name);
 	//technically unnecessary but ponies
-	
+
 	//if a lock cant be aquired don't wait, assume it's being cached already
 	if(!$page->lock()) goto done;
 	
@@ -140,7 +140,7 @@ $callback = function($buffer) use ($page, $config, &$redirectUrl, &$statusHeader
 	
 	$page->storeHtml($buffer);
 	$page->store();
-	
+
 	//TODO: impliment gzip, parameter for getHtml maybe?
 done:
 	return $buffer;

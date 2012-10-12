@@ -242,7 +242,7 @@ class entry {
 	
 }
 
-class page extends entry {		
+class page extends entry {
 	function retrive() {
 		$a = parent::retrive();
 		if($a instanceof page)
@@ -304,10 +304,15 @@ class page extends entry {
 		//TODO: cache query strings by chainging to $ ?
 		if($config->static && strpos($this->name, '?') === false) {
 		//	store into a dir tree
-			$path = $path . '/' . $this->name;
+		//store in a subfolder? prevent .htaccess inheritance
+			$path = $path . '/' . $this->name . '/$$/';
 			if(!is_dir($path)) mkdir($path, 0755, true);
-			$name = $path . '/index.html';
-			file_put_contents($name, $this->getHtml());
+			file_put_contents($path . '/index.html', $this->getHtml());
+			if($this->hasHeaders()) {
+				//generate .htaccess
+				$htaccess = $this->generateHtaccess();
+				file_put_contents($path . '/.htaccess', $htaccess);
+			}
 			$this->addFile($path);
 		} else if ($config->rewrite) {
 			//store in one folder
@@ -327,6 +332,25 @@ class page extends entry {
 		parent::store();
 	}
 	
+	function generateHtaccess() {
+		$ret = '';
+		
+		$headers = $this->getHeaders();
+		$code = false;
+		$start = 0;
+		if(strncmp('HTTP/1.', $headers[0], 7) === 0) {
+			$code = 0 + substr($headers[0], 9, 3);
+			$start = 1;
+		}
+		
+		for($x = $start; $x < sizeof($headers); $x++) {
+			$hdr = explode(': ', $headers[$x], 2);
+			$ret .= "Header set ${hdr[0]} '${hdr[1]}'\n";
+		}
+		
+		return $ret;
+	}
+
 	static function generateFooter($start, $time, $name) {
 		global $config;
 		if(!$config->footer) return '';

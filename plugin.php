@@ -55,12 +55,9 @@ function purgeCache()
 //     wp_clear_scheduled_hook();
 // }
 
-$_adminCallback = function()
-{
+add_action('admin_menu', function() {
     add_options_page('Cache', 'Rainbow Cache', 'manage_options', 'rainbow-cache/options.php');
-};
-
-add_action('admin_menu', $_adminCallback);
+});
 
 //TODO: invalidate by link 
 
