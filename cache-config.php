@@ -30,6 +30,9 @@ class config {
 
 	//or using a RewriteMap
 	public $rewrite = false;
+	
+	//write headers for static cache?
+	public $staticHeaders = true;
 
 	//seperator for cache entry filenames
 	//i like : but that breaks on nt (alternate data streams)
@@ -308,7 +311,7 @@ class page extends entry {
 			$path = $path . '/' . $this->name . '/$$/';
 			if(!is_dir($path)) mkdir($path, 0755, true);
 			file_put_contents($path . '/index.html', $this->getHtml());
-			if($this->hasHeaders()) {
+			if($config->staticHeaders && $this->hasHeaders()) {
 				//generate .htaccess
 				$htaccess = $this->generateHtaccess();
 				file_put_contents($path . '/.htaccess', $htaccess);
@@ -335,7 +338,13 @@ class page extends entry {
 	function generateHtaccess() {
 		$ret = '';
 		
+		//in apache something format, YYYYMMDDHHmmSS
+		$ret .=  "RewriteEngine on\n"                  //timezone hack
+		        ."RewriteCond %{TIME} >".date('YmdHis', time() + (3600*12))."\n"
+		        ."RewriteRule . /index.php [L]\n\n";
+		
 		$headers = $this->getHeaders();
+
 		$code = false;
 		$start = 0;
 		if(strncmp('HTTP/1.', $headers[0], 7) === 0) {
