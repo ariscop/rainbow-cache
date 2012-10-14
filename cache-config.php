@@ -315,6 +315,9 @@ class page extends entry {
 				//generate .htaccess
 				$htaccess = $this->generateHtaccess();
 				file_put_contents($path . '/.htaccess', $htaccess);
+				//TODO: bug, add ahead of the folder, glob doesnt 
+				//catch things starting with .
+				$this->addFile($path . '/.htaccess');
 			}
 			$this->addFile($path);
 		} else if ($config->rewrite) {

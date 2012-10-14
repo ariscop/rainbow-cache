@@ -110,6 +110,10 @@ $callback = function($buffer) use ($page, &$config, &$redirectUrl, &$statusHeade
 	//TODO: redirect caching?
 	if($redirectUrl !== false) goto done;
 	
+	//TODO: last modified
+	//$post = get_post();
+	//$mtime = get_post_modified_time('U', true, $post)
+	
 	//inform the client that the page is being generated
 	setStatus('Miss');
 	
