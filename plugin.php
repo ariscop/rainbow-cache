@@ -75,19 +75,29 @@ add_action('admin_menu', function() {
 //     $link = substr($link, 7);
 // }
 
+function _recursiveRm($files) {
+	foreach($files as $file) {
+		if(is_dir($file))
+			recursiveRm($file, true);
+		else
+			unlink($file);
+	}
+}
+
 function recursiveRm($dir, $delself = false) {
 	$files = glob($dir . '/*');
 
 	//WHAT IS THIS I DON'T EVEN
-	if(!is_array($files)) return;
-	if(count($files) === 0) return;
+	if(is_array($files) && count($files) !== 0)
+		_recursiveRm($files);
 
-    foreach($files as $file) {
-        if(is_dir($file))
-            recursiveRm($file, true);
-        else
-            unlink($file);
-    }
+	//and again because .
+	//never forget the [^.], glob will match . and ..
+	$files = glob($dir . '/.[^.]*');
+	
+	if(is_array($files) && count($files) !== 0)
+		_recursiveRm($files);
+	
     if($delself)
 		rmdir($dir);
 }

@@ -308,16 +308,18 @@ class page extends entry {
 		if($config->static && strpos($this->name, '?') === false) {
 		//	store into a dir tree
 		//store in a subfolder? prevent .htaccess inheritance
-			$path = $path . '/' . $this->name . '/$$/';
+			$path = $path . '/' . $this->name . '/@/';
 			if(!is_dir($path)) mkdir($path, 0755, true);
 			file_put_contents($path . '/index.html', $this->getHtml());
 			if($config->staticHeaders && $this->hasHeaders()) {
 				//generate .htaccess
 				$htaccess = $this->generateHtaccess();
-				file_put_contents($path . '/.htaccess', $htaccess);
-				//TODO: bug, add ahead of the folder, glob doesnt 
-				//catch things starting with .
-				$this->addFile($path . '/.htaccess');
+				if($htaccess !== false) {
+					file_put_contents($path . '/.htaccess', $htaccess);
+					//TODO: bug, add ahead of the folder, glob doesnt 
+					//catch things starting with .
+					$this->addFile($path . '/.htaccess');
+				}
 			}
 			$this->addFile($path);
 		} else if ($config->rewrite) {
@@ -339,25 +341,44 @@ class page extends entry {
 	}
 	
 	function generateHtaccess() {
-		$ret = '';
-		
-		//in apache something format, YYYYMMDDHHmmSS
-		$ret .=  "RewriteEngine on\n"                  //timezone hack
-		        ."RewriteCond %{TIME} >".date('YmdHis', time() + (3600*12))."\n"
-		        ."RewriteRule . /index.php [L]\n\n";
-		
-		$headers = $this->getHeaders();
-
-		$code = false;
-		$start = 0;
-		if(strncmp('HTTP/1.', $headers[0], 7) === 0) {
-			$code = 0 + substr($headers[0], 9, 3);
-			$start = 1;
+		$status = $this->data['status'];
+		if($status !== null) {
+			$code = substr($status, 9, 3);
+			if(!in_array($code, array('200', '301', '302', '303'))) {
+				//cant cache anything else
+				return false;
+			}
 		}
 		
-		for($x = $start; $x < sizeof($headers); $x++) {
+		$ret = '';
+		
+		if(isset($this->data['start'])) {
+			//expire static rewrites
+			//in apache something format, YYYYMMDDHHmmSS
+			$expire = date('YmdHis', $this->data['start']
+					+ (3600*11 /* tz */) + 3600 /* expire time */);
+			
+			$ret .= "RewriteEngine on\n"
+			       ."RewriteCond %{TIME} >".$expire."\n"
+			       ."RewriteRule . /index.php [L]\n\n";
+		}
+		
+		if(isset($this->data['redirect'])) {
+			$redirect = $this->data['redirect'];
+		}
+		
+		$headers = $this->getHeaders();
+		
+		for($x = 0; $x < sizeof($headers); $x++) {
 			$hdr = explode(': ', $headers[$x], 2);
 			$ret .= "Header set ${hdr[0]} '${hdr[1]}'\n";
+		}
+		
+		if($code > 300) if($redirect !== null) {
+			$ret .= "\nRewriteRule . ${redirect} [R=${code},L]\n";
+		} else {
+			//invalid state, bail out
+			return false;
 		}
 		
 		return $ret;

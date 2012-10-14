@@ -47,6 +47,10 @@ if($page->stored() && $page->hasHtml()) {
 	if($config->redirect_404 && $_SERVER['REQUEST_URI'] == '/404/')
 		status_header(404);
 	
+	//echo status
+	if(isset($page->data['status'])) {
+		header($page->data['status']);
+	}
 	//and echo headers if stored
 	if($page->hasHeaders()) {
 		foreach($page->getHeaders() as $k => $v) {
@@ -77,25 +81,22 @@ $_404_callback = function ($header) {
 	return $header;
 };
 
-$statusHeader = false;
-$redirectUrl = false;
-
 //there is seriously no other way to do this, its anoying
-$_onRedirect = function ($status, $location) use (&$redirectUrl) {
-	$redirectUrl = $location;
+$_onRedirect = function ($status, $location) use ($page) {
+	$page->data['redirect'] = $location;
 	return $status;
 };
 
 //headers_list does not include the status header.
-//php i am disapoint (moreso than useual)
-$_statusHeaderCallback = function ($value) use (&$statusHeader) {
-	$statusHeader = $value;
+//php i am disapoint (moreso than usual)
+$_statusHeaderCallback = function ($value) use ($page) {
+	$page->data['status'] = $value;
 	return $value;
 };
 
 //add_filter is run in plugin.php
 
-$callback = function($buffer) use ($page, &$config, &$redirectUrl, &$statusHeader) {
+$callback = function($buffer) use ($page, $config) {
 	//Output callback, for when page generation is done
 	
 	//dont cache admin page
@@ -106,9 +107,6 @@ $callback = function($buffer) use ($page, &$config, &$redirectUrl, &$statusHeade
 			//cache this 404
 		} else goto done;
 	}
-	
-	//TODO: redirect caching?
-	if($redirectUrl !== false) goto done;
 	
 	//TODO: last modified
 	//$post = get_post();
@@ -137,16 +135,16 @@ $callback = function($buffer) use ($page, &$config, &$redirectUrl, &$statusHeade
 	
 	$headers = headers_list();
 	if(is_array($headers)) {
-		if($statusHeader !== false)
-			array_unshift($headers, $statusHeader);
 		$page->storeHeaders($headers);
 	}
 	
 	$page->storeHtml($buffer);
 	$page->store();
 
+	return $buffer;
 	//TODO: impliment gzip, parameter for getHtml maybe?
 done:
+	setStatus('Wont');
 	return $buffer;
 };
 
