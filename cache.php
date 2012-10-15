@@ -44,25 +44,30 @@ $page = page::getEntry();
 
 // if cache entry is valid serve here
 if($page->stored() && $page->hasHtml()) {
-	if($config->redirect_404 && $_SERVER['REQUEST_URI'] == '/404/')
-		status_header(404);
+	if($page->data['expres'] > microtime(true)) {
+		//cache entry has expired
+		$page->delete();
+	} else {
+		if($config->redirect_404 && $_SERVER['REQUEST_URI'] == '/404/')
+			status_header(404);
 	
-	//echo status
-	if(isset($page->data['status'])) {
-		header($page->data['status']);
-	}
-	//and echo headers if stored
-	if($page->hasHeaders()) {
-		foreach($page->getHeaders() as $k => $v) {
-			header($v, true);
+		//echo status
+		if(isset($page->data['status'])) {
+			header($page->data['status']);
 		}
+		//and echo headers if stored
+		if($page->hasHeaders()) {
+			foreach($page->getHeaders() as $k => $v) {
+				header($v, true);
+			}
+		}
+		
+		setStatus('Hit');
+		//TODO: impliment gzip
+		print($page->getHtml());
+		flush();
+		die();
 	}
-	
-	setStatus('Hit');
-	//TODO: impliment gzip
-	print($page->getHtml());
-	flush();
-	die();
 }
 
 //dont generate a cache entry if commentor cookie is set
@@ -81,11 +86,15 @@ $_404_callback = function ($header) {
 	return $header;
 };
 
+$page->data['redirect'] = '';
+
 //there is seriously no other way to do this, its anoying
 $_onRedirect = function ($status, $location) use ($page) {
 	$page->data['redirect'] = $location;
 	return $status;
 };
+
+$page->data['status'] = null;
 
 //headers_list does not include the status header.
 //php i am disapoint (moreso than usual)
@@ -102,7 +111,14 @@ $callback = function($buffer) use ($page, $config) {
 	//dont cache admin page
 	if(is_admin()) goto done;
 	
-	if(is_404()) {
+	$status = $page->data['status'];
+	$code = null;
+	if($status !== null) {
+		$code = substr($status, 9, 3);
+	}
+	$page->data['code'] = $code;
+	
+	if(is_404() || $code == 404) {
 		if($config->redirect_404 && $_SERVER['REQUEST_URI'] == '/404/') {
 			//cache this 404
 		} else goto done;
@@ -123,7 +139,7 @@ $callback = function($buffer) use ($page, $config) {
 	$page->data['time'] = $time;
 	
 	$start = date('r', $start);
-	$time  = number_format($time);
+	$time  = number_format($time, 3);
 	
 	$name = $page->getFilename();
 	
@@ -150,8 +166,10 @@ done:
 
 ob_start($callback);
 
-$page->data['start'] = microtime(true);
+$start = microtime(true);
 
+$page->data['start'] = $start; 
+$page->data['expires'] = $start + $config->maxAge;
 
 if($config->saveVars) {
 	$page->data['_server'] = clone $_SERVER;

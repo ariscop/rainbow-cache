@@ -33,7 +33,13 @@ class config {
 	
 	//write headers for static cache?
 	public $staticHeaders = true;
-
+	
+	//staticly cache redirects? currently broken
+	public $staticRedirect = false;
+	
+	//max post age in seconds
+	public $maxAge = 3600;
+	
 	//seperator for cache entry filenames
 	//i like : but that breaks on nt (alternate data streams)
 	//and aparently on macs (they used to use : as path sep)
@@ -190,6 +196,9 @@ class entry {
 				@unlink($k);
 			}
 		}}
+		
+		//clear file list
+		$this->files = array();
 	
 		$this->locked = false;
 		$this->stored = false;
@@ -303,8 +312,17 @@ class page extends entry {
 	
 		$name = null;
 		$path = $config->getPath() . '/static/';
+		
+		$code = $this->data['code'];
+		$redirect = $this->data['redirect'];
+		if(!in_array($code, array('200', '301', '302', '303')))
+			goto noStatic;
+		
+		if(!$config->staticRewrite
+				&& $code > 300
+				&& $code < 304) goto noStatic;
 	
-		//TODO: cache query strings by chainging to $ ?
+		//TODO: cache query strings by chainging to $ ?	
 		if($config->static && strpos($this->name, '?') === false) {
 		//	store into a dir tree
 		//store in a subfolder? prevent .htaccess inheritance
@@ -334,6 +352,7 @@ class page extends entry {
 			//TODO: rewrite map
 		}
 	
+	noStatic:
 		//Betwene the begining of this function and the line below is
 		// Garuenteed atomic if (AND ONLY IF) lock() is called before
 		// it will also be unlocked after the parent call
@@ -341,31 +360,18 @@ class page extends entry {
 	}
 	
 	function generateHtaccess() {
-		$status = $this->data['status'];
-		if($status !== null) {
-			$code = substr($status, 9, 3);
-			if(!in_array($code, array('200', '301', '302', '303'))) {
-				//cant cache anything else
-				return false;
-			}
-		}
+		$code = $this->data['code'];
+		$redirect = $this->data['redirect'];
 		
 		$ret = '';
 		
-		if(isset($this->data['start'])) {
-			//expire static rewrites
-			//in apache something format, YYYYMMDDHHmmSS
-			$expire = date('YmdHis', $this->data['start']
-					+ (3600*11 /* tz */) + 3600 /* expire time */);
-			
-			$ret .= "RewriteEngine on\n"
-			       ."RewriteCond %{TIME} >".$expire."\n"
-			       ."RewriteRule . /index.php [L]\n\n";
-		}
+		//expire static rewrites
+		//in apache something format, YYYYMMDDHHmmSS
+		$expire = date('YmdHis', $this->data['expires'] + (3600*11));
 		
-		if(isset($this->data['redirect'])) {
-			$redirect = $this->data['redirect'];
-		}
+		$ret .= "RewriteEngine on\n"
+		       ."RewriteCond %{TIME} >".$expire."\n"
+		       ."RewriteRule . /index.php [L]\n\n";
 		
 		$headers = $this->getHeaders();
 		
@@ -374,7 +380,7 @@ class page extends entry {
 			$ret .= "Header set ${hdr[0]} '${hdr[1]}'\n";
 		}
 		
-		if($code > 300) if($redirect !== null) {
+		if($code > 300 && $code < 304) if($redirect !== null) {
 			$ret .= "\nRewriteRule . ${redirect} [R=${code},L]\n";
 		} else {
 			//invalid state, bail out
