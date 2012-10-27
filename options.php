@@ -9,6 +9,12 @@ require_once("cache-config.php");
 <p>Serving your pages in 10<sup>-5</sup> seconds flat</p>
 <?php
 
+//if we're in view mode, include the view page and bugger off
+if($_GET['mode'] == 'view') {
+	include("view.php");
+	return;
+}
+
 if (isset($_POST['clean'])) {
 	cleanCache();
 	echo '<div class="updated"><p> Cache Cleaned </p></div>';

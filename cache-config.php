@@ -40,6 +40,9 @@ class config {
 	//max post age in seconds
 	public $maxAge = 3600;
 	
+	//time zone, required for static cache expirery
+	public $tz = 11;
+	
 	//seperator for cache entry filenames
 	//i like : but that breaks on nt (alternate data streams)
 	//and aparently on macs (they used to use : as path sep)
@@ -168,7 +171,17 @@ class entry {
 		
 		$this->stored = true;
 		
+		//ensure we dont store it as locked
+		//or the file resource
+		$lck = $this->locked;
+		$fil = $this->file;
+		$this->locked = false;
+		$this->file = false;
+		
 		$text = serialize($this);
+		
+		$this->locked = $lck;
+		$this->file   = $fil;
 		
 		if($file === false) {
 			file_put_contents($this->filename, serialize($text), LOCK_EX);
@@ -199,8 +212,6 @@ class entry {
 		
 		//clear file list
 		$this->files = array();
-	
-		$this->locked = false;
 		$this->stored = false;
 	
 		$ret = @unlink($this->filename);
@@ -367,7 +378,7 @@ class page extends entry {
 		
 		//expire static rewrites
 		//in apache something format, YYYYMMDDHHmmSS
-		$expire = date('YmdHis', $this->data['expires'] + (3600*11));
+		$expire = date('YmdHis', $this->data['expires'] + (3600*$config->tz));
 		
 		$ret .= "RewriteEngine on\n"
 		       ."RewriteCond %{TIME} >".$expire."\n"

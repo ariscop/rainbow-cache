@@ -93,6 +93,8 @@ function recursiveRm($dir, $delself = false) {
 
 	//and again because .
 	//never forget the [^.], glob will match . and ..
+	//Todo: does not work on windows, ^ does not invert
+	//instead it matches either . or ^
 	$files = glob($dir . '/.[^.]*');
 	
 	if(is_array($files) && count($files) !== 0)
@@ -102,8 +104,17 @@ function recursiveRm($dir, $delself = false) {
 		rmdir($dir);
 }
 
-
 //TODO: auto invalidates
+/* do_action('wp_insert_post', $post_ID, $post);
+ * 
+ *    do_action( "update_option_{$option}", $oldvalue, $_newvalue );
+ * or do_action( 'updated_option', $option, $oldvalue, $_newvalue );
+ * //where $option is 'stickie_post'
+ * 
+ * do_action( 'deleted_post', $postid );
+ * 
+ * do_action( 'clean_post_cache', $post->ID, $post );
+ */
 /*
 add_action('switch_theme', '', 0);
 add_action('edit_post', '', 0);
