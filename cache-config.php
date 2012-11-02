@@ -384,7 +384,9 @@ class page extends entry {
 		if($config->static && strpos($this->name, '?') === false) {
 		//	store into a dir tree
 		//store in a subfolder? prevent .htaccess inheritance
-			$path = $path . '/' . $this->name . '/@/';
+		//note the lack of / preceding the @, this should ensure that
+		//trailing slash vs non trailing get different folders
+			$path = $path . '/' . $this->name . '@/';
 			if(!is_dir($path)) mkdir($path, 0755, true);
 			file_put_contents($path . '/index.html', $this->getHtml());
 			
