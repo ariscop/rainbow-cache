@@ -104,6 +104,10 @@ function recursiveRm($dir, $delself = false) {
 		rmdir($dir);
 }
 
+//TODO: Inhibit wp-cron if we're caching
+/*
+ * $lock = get_transient('doing_cron');
+ */
 //TODO: auto invalidates
 /* do_action('wp_insert_post', $post_ID, $post);
  * 

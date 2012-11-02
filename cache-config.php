@@ -43,6 +43,9 @@ class config {
 	//time zone, required for static cache expirery
 	public $tz = 11;
 	
+	//time zone, required for static cache expirery
+	public $tz = 11;
+	
 	//seperator for cache entry filenames
 	//i like : but that breaks on nt (alternate data streams)
 	//and aparently on macs (they used to use : as path sep)
@@ -102,6 +105,11 @@ class entry {
 	//the entrys path
 	private $filename = null;
 	
+	//expire times
+	//private $maxAge = false;
+	//false meens do not expire 
+	//private $expires = false;
+	
 	//any files that have to be cleaned with the entry
 	private $files = array();
 	
@@ -117,31 +125,22 @@ class entry {
 	function getFilename() {
 		return basename($this->filename);
 	}
-	
-	/**
-	 * Create and lock the cache entry. the lock will fail if
+
+	/*
+	 * Open and lock the cache entry. the lock will fail if
 	 * the entry already exists on disk. this is intended to be
 	 * used to start a transaction which is finilized by store()
-	 * this call should not block. 
+	 * this call should not block.
 	 * @return true if the lock was successfull, otherwise false
 	 */
-	function lock() {
-		global $config;
-		//if already locked just return
-		if($this->locked) return true;
-
-		$dir = dirname($this->filename);
-
-		if(!is_dir($dir))
-			mkdir($dir, 0755, true);
-
-		//this applys to re-opening a file for deletion
-		//or just opening a file for the same reason
-		if($this->stored) {
-			$file = @fopen($this->filename, 'r+');
-		} else {
-			$file = @fopen($this->filename, 'x');
-		}
+	/*
+	function open($force = false) {
+		//if already locked and open, just return
+		if($this->locked && $this->file !== false)
+				return true;
+		
+		$file = @fopen($this->filename, 'r');
+	
 		if($file !== false) {
 			if(flock($file, LOCK_EX) === false) {
 				fclose($this->file);
@@ -153,54 +152,95 @@ class entry {
 			return true;
 		}
 		return false;
+	}*/
+	
+	/**
+	 * Create and lock the cache entry. the lock will fail if
+	 * the entry already exists on disk. this is intended to be
+	 * used to start a transaction which is finilized by store()
+	 * this call should not block. 
+	 * @return true if the lock was successfull, otherwise false
+	 * @param bool $force if true delete() will be called first to
+	 * purge an existing entry, the call may still fail if called
+	 * concurently
+	 */
+	function lock($force = false) {
+		//if already locked just return
+		if($this->locked) return true;
+
+		$dir = dirname($this->filename);
+
+		if(!is_dir($dir))
+			mkdir($dir, 0755, true);
+		
+		//delete first if we're forcing a lock
+		if($force && is_file($this->filename))
+			$this->delete();
+		
+		if(!$this->stored)
+			$file = @fopen($this->filename, 'x');
+		
+		if($file !== false) {
+			//if(flock($file, LOCK_EX) === false) {
+			//	fclose($this->file);
+			//	$this->file = false;
+			//	return false;
+			//}
+			$this->file = $file;
+			$this->locked = true;
+			return true;
+		}
+		return false;
 	}
 	
 	/**
 	 * Store the cache entry
-	 * if lock has been called this function finilizes the transaction
-	 * otherwise it writes the contents with file_put_contents with
-	 * the LOCK_EX flag set
+	 * if already locked this function finilizes the transaction
+	 * otherwise lock will be called
+	 * @param bool $force overwrite existing entry (default to no)
 	 * @return nothing
 	 */
-	function store() {
+	function store($force = false) {
 		global $config;
 		$dir = dirname($this->filename);
-		
+
 		if(!is_dir($dir))
 			mkdir($dir, 0755, true);
+
+		//return false if the entry cant be locked
+		//lock() is a noop if the file is already locked
+		if(!$this->lock($force))
+			return false;
 		
+		$file = $this->file;
 		$this->stored = true;
-		
+
 		//ensure we dont store it as locked
 		//or the file resource
-		$lck = $this->locked;
-		$fil = $this->file;
 		$this->locked = false;
 		$this->file = false;
 		
 		$text = serialize($this);
-		
-		$this->locked = $lck;
-		$this->file   = $fil;
-		
-		if($file === false) {
-			file_put_contents($this->filename, serialize($text), LOCK_EX);
-		} else {
-			ftruncate($this->file, 0);
- 			fwrite($this->file, $text);
- 			fflush($this->file);
- 			$this->unlock();
-		}
+
+		ftruncate($file, 0);
+		fwrite($file, $text);
+		fflush($file);
+		fclose($file);
+		//$this->unlock();
 	}
+		
 	
 	/**
 	 * Delete this cache entry from the disk
 	 * @return boolean
 	 */
 	function delete() {
-		if(!$this->lock() || $this->file === false) return false;
+		if(!$this->lock()) return false;
 	
 		ftruncate($this->file, 0);
+		/* BUG: glob() wont match files starting with . 
+		 * add these to $files manually */
+		 
 		foreach($this->files as $k => $v) { if($v) {
 			if(is_dir($k)) {
 				@array_map('unlink', glob($k . '/*'));
@@ -213,24 +253,22 @@ class entry {
 		//clear file list
 		$this->files = array();
 		$this->stored = false;
-	
+
+		fclose($this->file);
 		$ret = @unlink($this->filename);
-		$this->unlock();
-		if($ret === false)
-			@unlink($this->filename);
 	}
 	
-	/**
+	/* /*
 	 * Remove the lock if any from the cache entry.
 	 * this does not remove the file and subsequent
 	 * calls to lock() will fail. 
 	 * @return nothing
 	 */
-	function unlock() {
+	/*function unlock() {
 		@flock($file, LOCK_UN);
 		fclose($this->file);
 		$this->locked = false; 
-	}
+	}*/
 	
 	function retrive() {
 		if (is_file($this->filename)) {
@@ -257,6 +295,7 @@ class entry {
 	}
 	
 	function __destruct() {
+		//just to be safe
 		if($this->file !== null) {
 			@flock($file, LOCK_UN);
 			@fclose($file);
@@ -280,7 +319,6 @@ class page extends entry {
 		return $page;
 	}
 	
-	//TODO: static caching
 	function storeHtml($html) {
 		$this->data['html'] = $html;
 	}
@@ -318,6 +356,15 @@ class page extends entry {
 		parent::__construct();
 	}
 	
+	/* TODO: tags? i could tag things as archive pages or homepage and so on
+	 * and then i could expire these as a group. plus php is going to be around
+	 * for any expire so i can just use the db to store tags.
+	 * perhaps i should look into indexing cache entries in the database.
+	 * TODO ALSO: Widgets! if i can get a list of widgets, its possible to add
+	 * those as tags, then expire everything with a particular widget when it
+	 * changes! requires clever as different plugins will need to be manually
+	 * adapted (actions or filters) but not imposible
+	 */
 	function store() {
 		global $config;
 	
@@ -329,10 +376,13 @@ class page extends entry {
 		if(!in_array($code, array('200', '301', '302', '303')))
 			goto noStatic;
 		
+		//TODO: static redirect caching breaks right now, trailing '/' bug  
 		if(!$config->staticRewrite
 				&& $code > 300
 				&& $code < 304) goto noStatic;
 	
+		$htaccess = false;
+		
 		//TODO: cache query strings by chainging to $ ?	
 		if($config->static && strpos($this->name, '?') === false) {
 		//	store into a dir tree
@@ -340,16 +390,15 @@ class page extends entry {
 			$path = $path . '/' . $this->name . '/@/';
 			if(!is_dir($path)) mkdir($path, 0755, true);
 			file_put_contents($path . '/index.html', $this->getHtml());
-			if($config->staticHeaders && $this->hasHeaders()) {
-				//generate .htaccess
-				$htaccess = $this->generateHtaccess();
-				if($htaccess !== false) {
-					file_put_contents($path . '/.htaccess', $htaccess);
-					//TODO: bug, add ahead of the folder, glob doesnt 
-					//catch things starting with .
-					$this->addFile($path . '/.htaccess');
-				}
-			}
+			
+			//generate .htaccess
+			$htaccess = $this->generateHtaccess();
+			//this gets written later
+			
+			//NOTE: .htaccess file is allways written, even if blank
+			//this allows static cache to be atomicly created/expired
+			//by removing the .htaccess file first
+			$this->addFile($path . '/.htaccess');
 			$this->addFile($path);
 		} else if ($config->rewrite) {
 			//store in one folder
@@ -358,7 +407,13 @@ class page extends entry {
 			file_put_contents($name, $this->getHtml());
 			$this->addFile($name);
 		}
-	
+		
+		if($htaccess !== false) {
+			//TODO: bug, add ahead of the folder, glob doesnt
+			//catch things starting with .
+			file_put_contents($path . '/.htaccess', $htaccess);
+		}
+			
 		if($name && $config->rewrite) {
 			//TODO: rewrite map
 		}
@@ -371,6 +426,7 @@ class page extends entry {
 	}
 	
 	function generateHtaccess() {
+		if($config->staticHeaders && $this->hasHeaders()) sacd;afsdc;cas;
 		$code = $this->data['code'];
 		$redirect = $this->data['redirect'];
 		
