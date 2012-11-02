@@ -425,7 +425,7 @@ class page extends entry {
 	}
 	
 	function generateHtaccess() {
-		if($config->staticHeaders && $this->hasHeaders()) sacd;afsdc;cas;
+		if(!$config->staticHeaders || !$this->hasHeaders()) return false; 
 		$code = $this->data['code'];
 		$redirect = $this->data['redirect'];
 		
