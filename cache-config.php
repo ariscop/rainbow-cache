@@ -43,9 +43,6 @@ class config {
 	//time zone, required for static cache expirery
 	public $tz = 11;
 	
-	//time zone, required for static cache expirery
-	public $tz = 11;
-	
 	//seperator for cache entry filenames
 	//i like : but that breaks on nt (alternate data streams)
 	//and aparently on macs (they used to use : as path sep)
