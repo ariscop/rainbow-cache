@@ -373,11 +373,6 @@ class page extends entry {
 		if(!in_array($code, array('200', '301', '302', '303')))
 			goto noStatic;
 		
-		//TODO: static redirect caching breaks right now, trailing '/' bug  
-		if(!$config->staticRewrite
-				&& $code > 300
-				&& $code < 304) goto noStatic;
-	
 		$htaccess = false;
 		
 		//TODO: cache query strings by chainging to $ ?	
