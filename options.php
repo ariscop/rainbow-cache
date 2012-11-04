@@ -15,12 +15,6 @@ if($_GET['mode'] == 'view') {
 	return;
 }
 
-//if we're in view mode, include the view page and bugger off
-if($_GET['mode'] == 'view') {
-	include("view.php");
-	return;
-}
-
 if (isset($_POST['clean'])) {
 	cleanCache();
 	echo '<div class="updated"><p> Cache Cleaned </p></div>';

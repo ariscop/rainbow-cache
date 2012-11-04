@@ -149,6 +149,14 @@ class entry implements \Serializable {
 	function getFilename() {
 		return basename($this->filename);
 	}
+	
+	function getInfo() {
+		return array(
+			'type'     => $this->type,
+			'name'     => $this->name,
+			'files'    => array_keys($this->files)
+		);
+	}
 
 	/*
 	 * Open and lock the cache entry. the lock will fail if
@@ -392,6 +400,20 @@ class page extends entry {
 		parent::__construct();
 	}
 	
+	/**
+	 * Get a url directly to the the static entry (if any)
+	 * @return String Url to the entry
+	 */
+	function getStaticPageUrl() {
+		global $config;
+		
+		$path = $config->getPath() . '/static/' . $this->name . '@/index.html';
+		if(is_file($path))
+			return str_replace($_SERVER['DOCUMENT_ROOT'],
+			                   'http://' . $_SERVER['HTTP_HOST'], $path);
+		return false;
+	}
+	
 	/* TODO: tags? i could tag things as archive pages or homepage and so on
 	 * and then i could expire these as a group. plus php is going to be around
 	 * for any expire so i can just use the db to store tags.
@@ -420,7 +442,7 @@ class page extends entry {
 		//store in a subfolder? prevent .htaccess inheritance
 		//note the lack of / preceding the @, this should ensure that
 		//trailing slash vs non trailing get different folders
-			$path = $path . '/' . $this->name . '@/';
+			$path = $path . $this->name . '@/';
 			if(!is_dir($path)) mkdir($path, 0755, true);
 			file_put_contents($path . '/index.html', $this->getHtml());
 			
