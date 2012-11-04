@@ -91,7 +91,7 @@ if($config->default) {
 
 //TODO: limit cache size? atomic opperations on a list
 //TODO: will be pain in pure php
-class entry {
+class entry implements \Serializable {
 	//data goes here
 	public $data = array();
 	
@@ -114,6 +114,33 @@ class entry {
 	private $file = false;
 	//and status of the lock
 	private $locked = false;
+	
+	//manual serialize
+	//should take less space and
+	//hopefully prevent class field abuse
+	public function serialize() {
+		return serialize(array(
+				'name'   => $this->name,
+				'type'   => $this->type,
+				'files'  => $this->files,
+				'data'   => $this->data
+		));
+	}
+	
+	public function unserialize($data) {
+		global $config;
+		
+		$data = unserialize($data);
+		
+		$this->stored = true;
+		$this->name   = $data['name'];
+		$this->type   = $data['type'];
+		$this->files  = $data['files'];
+		$this->data   = $data['data'];
+		
+		$dir = $config->getStorePath();
+		$this->filename = $dir . $this->type . $config->sep . md5($this->name);
+	}
 	
 	function stored() {
 		return $this->stored;
@@ -177,7 +204,7 @@ class entry {
 		if(!$this->stored)
 			$file = @fopen($this->filename, 'x');
 		
-		if($file !== false) {
+		if($file !== false && $file !== NULL) {
 			//if(flock($file, LOCK_EX) === false) {
 			//	fclose($this->file);
 			//	$this->file = false;
@@ -210,10 +237,8 @@ class entry {
 			return false;
 		
 		$file = $this->file;
-		$this->stored = true;
-
-		//ensure we dont store it as locked
-		//or the file resource
+		
+		//mark this entry as unlocked
 		$this->locked = false;
 		$this->file = false;
 		
@@ -229,12 +254,22 @@ class entry {
 	
 	/**
 	 * Delete this cache entry from the disk
-	 * @return boolean
+	 * WARNING: the success/fail check is only done on the cache entry
+	 * extra files may or may not have been deleted regardless of the return value
+	 * @return boolean true on success, false on failure
 	 */
 	function delete() {
-		if(!$this->lock()) return false;
-	
-		ftruncate($this->file, 0);
+		//if(!$this->lock()) return false;
+		if(!$this->stored) return false;
+		
+		if($this->file === false)
+			$file = @fopen($this->filename, 'r+');
+		else
+			$file = $this->file;
+		
+		$this->file = false;
+		
+		ftruncate($file, 0);
 		/* BUG: glob() wont match files starting with . 
 		 * add these to $files manually */
 		 
@@ -251,8 +286,12 @@ class entry {
 		$this->files = array();
 		$this->stored = false;
 
-		fclose($this->file);
+		fclose($file);
 		$ret = @unlink($this->filename);
+		
+		$this->locked = false;
+		
+		return $ret;
 	}
 	
 	/* /*
@@ -420,7 +459,8 @@ class page extends entry {
 	}
 	
 	function generateHtaccess() {
-		if(!$config->staticHeaders || !$this->hasHeaders()) return false; 
+		//TODO: this check was failing, figure why
+		//if(!$config->staticHeaders || !$this->hasHeaders()) return false; 
 		$code = $this->data['code'];
 		$redirect = $this->data['redirect'];
 		
