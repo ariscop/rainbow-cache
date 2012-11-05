@@ -13,7 +13,7 @@ if(!$config->enabled)
 
 function setStatus($a) {
 	global $config;
-	if($config->addHeader)
+	if($config->header)
 		header($config->headerName . ': ' . $a, true);
 }
 
