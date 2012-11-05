@@ -175,7 +175,7 @@ $page->data['start'] = $start;
 $page->data['expires'] = $start + $config->maxAge;
 
 if($config->saveVars) {
-	$page->data['_server'] = clone $_SERVER;
-	$page->data['_cookie'] = clone $_COOKIE;
+	$page->data['_server'] = $_SERVER;
+	$page->data['_cookie'] = $_COOKIE;
 }
 
