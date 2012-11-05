@@ -2,9 +2,6 @@
 
 require_once("cache-config.php");
 
-error_reporting(E_ALL & (!E_STRICT));
-ini_set('display_errors', '1');
-
 //sanity check
 if(!($config instanceof Config))
 	//config is invalid
@@ -18,6 +15,12 @@ function setStatus($a) {
 	global $config;
 	if($config->addHeader)
 		header($config->headerName . ': ' . $a, true);
+}
+
+if($config->debug) {
+	//turn on error reporting
+	error_reporting(E_ALL & (!E_STRICT));
+	ini_set('display_errors', '1');
 }
 
 setStatus('Wont');

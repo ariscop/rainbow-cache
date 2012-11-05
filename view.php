@@ -14,7 +14,7 @@ class cache_list extends \WP_List_Table {
 	function get_columns() {
 		return array(
 			'type'   => 'Type',
-			'static' => '',
+			'static' => 'Static',
 			'name'   => 'Name'
 		);
 	}
@@ -87,6 +87,7 @@ class cache_list extends \WP_List_Table {
 	width: 40px;
 }
 </style>
+<a href="<?php echo(add_query_arg('mode', '', $_SERVER['REQUEST_URI'])); ?>" class="button-primary">< Back</a>
 <?php
 
 $table = new cache_list();

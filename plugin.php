@@ -18,10 +18,13 @@ not endorsed by hasbro, pls no sue kthx
 
 //register_activation_hook(__FILE__, 'activate');
 //function activate()
+$isCleaned = false;
 
 function cleanCache()
 {
-	global $config;
+	global $config, $isCleaned;
+	if($isCleaned) return;
+	
 	$callback = function($name) {
 		$data = file_get_contents($name);
 		$data = unserialize($data);
@@ -31,6 +34,8 @@ function cleanCache()
 	$dirs = glob($config->getStorePath() . '/*');
 	if($dirs !== false)
 		array_map($callback, $dirs);
+	
+	$isCleaned = true;
 }
 
 function purgeCache()
@@ -103,6 +108,41 @@ function recursiveRm($dir, $delself = false) {
     if($delself)
 		rmdir($dir);
 }
+
+$_invalidateAll = function() {
+	cleanCache();
+};
+
+function invalidatePost($post_id) {
+	$post = get_post($post_id);
+	$link = get_permalink($post_id);
+	$link = preg_replace(':https?\://:', '', $link);
+	
+	$entry = new page($link);
+	$entry = $entry->retrive();
+	if($entry instanceof page)
+		$entry->delete();
+}
+
+$onCommentTransition = function($new_status, $old_status, $comment)
+{
+	invalidatePost($comment->comment_post_ID);
+};
+$onSetCommentStatus = function($comment_id, $comment_status)
+{
+	$comment = get_comment($comment_id);
+	invalidatePost($comment->comment_post_ID);
+};
+
+add_action('switch_theme', $_invalidateAll, 0);
+add_action('edit_post',    $_invalidateAll, 0);
+add_action('publish_post', $_invalidateAll, 0);
+add_action('delete_post',  $_invalidateAll, 0);
+
+//TODO: this isnt working for some reason
+//changing a coments status invalidates everything, its wierd and anoying
+add_action('transition_comment_status', $onCommentTransition, 0, 3);
+add_action('wp_set_comment_status',     $onSetCommentStatus,  0, 2);
 
 //TODO: Inhibit wp-cron if we're caching
 /*

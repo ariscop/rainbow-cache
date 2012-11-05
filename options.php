@@ -56,6 +56,7 @@ if (isset($_POST['save'])) {
 	checkBool('enabled');
 	checkBool('header');
 	checkBool('footer');
+	checkBool('saveVars');
 	checkBool('debug');
 	checkBool('redirect_404');
 	
@@ -115,9 +116,19 @@ function printString($name, $title, $description='') {
 </tr><?php
 }
 
+//and print the current number of entrys, because i like numbers
+$arr = glob($config->getStorePath() . '/*');
+$count = 0;
+if(is_array($arr))
+	$count = count($arr); 
+
 ?>
+Cache entrys: <?php echo($count); ?>
 <form method="post" action="">
 <?php wp_nonce_field(); ?>
+
+<a href="<?php echo(add_query_arg('mode', 'view', $_SERVER['REQUEST_URI'])); ?>" class="button-primary">View</a>
+<input type="submit" class="button-primary" name="clean" value="Clean cache">
 
 <table class='form-table'>
 <tbody>
@@ -141,14 +152,15 @@ printBool('redirect_404', 'Redirect 404', 'this saves a bit of cpu time by redir
 //printString('path', 'Cache Path', 'reletive to WP_CONTENT_DIR (' . WP_CONTENT_DIR . ')');
 printString('path', 'Cache Path', 'entries will be stored under /store and static files will be stored in /static');
 //printString('sep', 'Entry delimiter', 'use something other than : on windows');
-printBool('debug', 'Enable debug mode', 'Don\'t enable unless you know what you\'re doing, cache entrys consume more space when enabled');
+printBool('saveVars', 'Save request vars', 'Save $_SERVER and $_COOKIE in the cache entry (Debug feature)');
+printBool('debug', 'Enable debug mode', 'Enable error reporting (you want this disabled)');
 ?>
 </tbody>
 </table>
 
 <br/><br/>
+
 <input type="submit" class="button-primary" name="save" value="Save config">
-<input type="submit" class="button-primary" name="clean" value="Clean cache">
 <input type="submit" class="button-primary" name="purge" value="Purge cache">
 <input type="submit" class="button-primary" name="reset" value="Reset settings">
 

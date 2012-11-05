@@ -49,8 +49,10 @@ class config {
 	//changing this to a path seperator should create folders
 	public $sep = ':';
 
-	//debug mode
-	//currently just saves _SERVER and _COOKIE from the request
+	//save _SERVER and _COOKIE from the request, for later analysis
+	public $saveVars = false;
+	
+	//debug mode, this enables error reporting
 	public $debug = false;
 	
 	function getPath() {
@@ -481,6 +483,9 @@ class page extends entry {
 	}
 	
 	function generateHtaccess() {
+		//TODO: if the page has comments check for the comentor cookie
+		// and fall throught to php
+		
 		//TODO: this check was failing, figure why
 		//if(!$config->staticHeaders || !$this->hasHeaders()) return false; 
 		$code = $this->data['code'];
@@ -500,6 +505,9 @@ class page extends entry {
 		
 		for($x = 0; $x < sizeof($headers); $x++) {
 			$hdr = explode(': ', $headers[$x], 2);
+			//set cache-status header if it exists
+			if(strcmp($hdr[0], $config->headerName) === 0)
+				$hdr[1] = 'Static';
 			$ret .= "Header set ${hdr[0]} '${hdr[1]}'\n";
 		}
 		
