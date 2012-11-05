@@ -1,0 +1,7 @@
+RewriteEngine on
+
+Order allow,deny
+Allow from all
+
+#so we can see the variable from php
+RewriteRule . - [E=A_TIME:%{TIME}]

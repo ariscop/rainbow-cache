@@ -64,9 +64,11 @@ if (isset($_POST['save'])) {
 	checkBool('rewrite');
 	
 	checkString('headerName');
+	checkString('tz');
 	checkString('path');
 	//checkString('sep');
 
+	$config->tz = intval($config->tz);
 	$config->default = false;
 
 	//save to disk
@@ -151,6 +153,8 @@ printBool('rewrite', 'Enable rewrite map');
 printBool('redirect_404', 'Redirect 404', 'this saves a bit of cpu time by redirecting to /404/');
 //printString('path', 'Cache Path', 'reletive to WP_CONTENT_DIR (' . WP_CONTENT_DIR . ')');
 printString('path', 'Cache Path', 'entries will be stored under /store and static files will be stored in /static');
+//TODO: link to test/tz.php
+printString('tz', 'UTC Offset', 'Required for static caching');
 //printString('sep', 'Entry delimiter', 'use something other than : on windows');
 printBool('saveVars', 'Save request vars', 'Save $_SERVER and $_COOKIE in the cache entry (Debug feature)');
 printBool('debug', 'Enable debug mode', 'Enable error reporting (you want this disabled)');

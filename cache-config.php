@@ -483,6 +483,7 @@ class page extends entry {
 	}
 	
 	function generateHtaccess() {
+		global $config;
 		//TODO: if the page has comments check for the comentor cookie
 		// and fall throught to php
 		
@@ -495,7 +496,7 @@ class page extends entry {
 		
 		//expire static rewrites
 		//in apache something format, YYYYMMDDHHmmSS
-		$expire = date('YmdHis', $this->data['expires'] + (3600*$config->tz));
+		$expire = date('YmdHis', $this->data['expires'] + (3600.0 * $config->tz));
 		
 		$ret .= "RewriteEngine on\n"
 		       ."RewriteCond %{TIME} >".$expire."\n"
@@ -506,7 +507,7 @@ class page extends entry {
 		for($x = 0; $x < sizeof($headers); $x++) {
 			$hdr = explode(': ', $headers[$x], 2);
 			//set cache-status header if it exists
-			if(strcmp($hdr[0], $config->headerName) === 0)
+			if($hdr[0] == $config->headerName)
 				$hdr[1] = 'Static';
 			$ret .= "Header set ${hdr[0]} '${hdr[1]}'\n";
 		}
