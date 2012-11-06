@@ -47,7 +47,7 @@ $page = page::getEntry();
 
 // if cache entry is valid serve here
 if($page->stored() && $page->hasHtml()) {
-	if($page->data['expres'] > microtime(true)) {
+	if($page->data['expires'] > microtime(true)) {
 		//cache entry has expired
 		$page->delete();
 	} else {
