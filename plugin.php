@@ -97,10 +97,10 @@ function recursiveRm($dir, $delself = false) {
 		_recursiveRm($files);
 
 	//and again because .
-	//never forget the [^.], glob will match . and ..
-	//Todo: does not work on windows, ^ does not invert
-	//instead it matches either . or ^
-	$files = glob($dir . '/.[^.]*');
+	//never forget the [!.], glob will match . and ..
+	//NOTE: ^ inverts on linux, ! however seems to work
+	//on all platforms
+	$files = glob($dir . '/.[!.]*');
 	
 	if(is_array($files) && count($files) !== 0)
 		_recursiveRm($files);
