@@ -52,9 +52,6 @@ if($page->stored() && $page->hasHtml()) {
 		$page->delete();
 		$page = new page();
 	} else {
-		if($config->redirect_404 && $_SERVER['REQUEST_URI'] == '/404/')
-			status_header(404);
-	
 		//echo status
 		if(isset($page->data['status'])) {
 			header($page->data['status']);
