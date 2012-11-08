@@ -47,9 +47,10 @@ $page = page::getEntry();
 
 // if cache entry is valid serve here
 if($page->stored() && $page->hasHtml()) {
-	if($page->data['expires'] > microtime(true)) {
+	if($page->data['expires'] < microtime(true)) {
 		//cache entry has expired
 		$page->delete();
+		$page = new page();
 	} else {
 		if($config->redirect_404 && $_SERVER['REQUEST_URI'] == '/404/')
 			status_header(404);
