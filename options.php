@@ -64,11 +64,12 @@ if (isset($_POST['save'])) {
 	checkBool('rewrite');
 	
 	checkString('headerName');
+	checkString('maxAge');
 	checkString('tz');
 	checkString('path');
 	//checkString('sep');
 
-	$config->tz = intval($config->tz);
+	$config->maxAge = intval($config->maxAge);
 	$config->default = false;
 
 	//save to disk
@@ -155,6 +156,7 @@ printBool('redirect_404', 'Redirect 404', 'this saves a bit of cpu time by redir
 printString('path', 'Cache Path', 'entries will be stored under /store and static files will be stored in /static');
 //TODO: link to test/tz.php
 printString('tz', 'UTC Offset', 'Required for static caching');
+printString('maxAge', 'Max age', 'Maximum time to store cached entries');
 //printString('sep', 'Entry delimiter', 'use something other than : on windows');
 printBool('saveVars', 'Save request vars', 'Save $_SERVER and $_COOKIE in the cache entry (Debug feature)');
 printBool('debug', 'Enable debug mode', 'Enable error reporting (you want this disabled)');
