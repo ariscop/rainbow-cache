@@ -109,10 +109,6 @@ function recursiveRm($dir, $delself = false) {
 		rmdir($dir);
 }
 
-$_invalidateAll = function() {
-	cleanCache();
-};
-
 function invalidatePost($post_id) {
 	$post = get_post($post_id);
 	$link = get_permalink($post_id);
@@ -123,6 +119,14 @@ function invalidatePost($post_id) {
 	if($entry instanceof page)
 		$entry->delete();
 }
+
+//Only run the following if the cache is enabled
+if(!$config->enabled)
+	return;
+
+$_invalidateAll = function() {
+	cleanCache();
+};
 
 $onCommentTransition = function($new_status, $old_status, $comment)
 {
@@ -138,6 +142,23 @@ add_action('switch_theme', $_invalidateAll, 0);
 add_action('edit_post',    $_invalidateAll, 0);
 add_action('publish_post', $_invalidateAll, 0);
 add_action('delete_post',  $_invalidateAll, 0);
+
+//TODO: bypass static cache for commentors on pages they have commented
+//the set_comment_cookies can be used for this and compare cookies
+//in the .htaccess file, can nick the expires time from comment_cookie_lifetime
+/*
+$_setComentCookie = function($data) use ($page) {
+};
+
+$_getComentCookie = function($data) use ($page) {
+	
+	add_filter('comment_cookie_lifetime', $_setComentCookie);
+	return $data;
+};
+
+add_action('wp_set_comment_cookies');
+*/
+
 
 //TODO: this isnt working for some reason
 //changing a coments status invalidates everything, its wierd and anoying
