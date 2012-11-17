@@ -121,6 +121,7 @@ function invalidatePost($post_id) {
 }
 
 //Only run the following if the cache is enabled
+//TODO: common function to check if cache should be run
 if(!$config->enabled)
 	return;
 
@@ -143,21 +144,34 @@ add_action('edit_post',    $_invalidateAll, 0);
 add_action('publish_post', $_invalidateAll, 0);
 add_action('delete_post',  $_invalidateAll, 0);
 
-//TODO: bypass static cache for commentors on pages they have commented
-//the set_comment_cookies can be used for this and compare cookies
-//in the .htaccess file, can nick the expires time from comment_cookie_lifetime
-/*
-$_setComentCookie = function($data) use ($page) {
-};
+// Store post id, if there is one
+$post = null;
+add_action('the_post', function($_post) use ($post, $page) {
+	$post = &$_post;
+	$page->data['post_id']  = $post->ID;
+	$page->data['post_sig'] = getPostSig($post->ID);
+});
 
-$_getComentCookie = function($data) use ($page) {
+function getPostSig($post_id) {
+	$str = md5($post_id);
+	//6 char sig should be more than enough
+	return substr($str, 0, 6);
+}
+
+//partial copy paste from wp-includes/comment.php
+add_action('set_comment_cookies', function($comment, $user) {
+	if ( $user->exists() )
+		return;
+
+	$comment_cookie_lifetime = apply_filters('comment_cookie_lifetime', 30000000);
 	
-	add_filter('comment_cookie_lifetime', $_setComentCookie);
-	return $data;
-};
-
-add_action('wp_set_comment_cookies');
-*/
+	$data = $_COOKIE['comment_posts_' . COOKIEHASH];
+	$sig  = getPostSig($comment->comment_post_ID);
+	if(strpos($data, $sig) === false)
+		$data .= $sig;
+	
+	setcookie('comment_posts_' . COOKIEHASH, $data, time() + $comment_cookie_lifetime, COOKIEPATH, COOKIE_DOMAIN);
+}, 10, 2);
 
 
 //TODO: this isnt working for some reason

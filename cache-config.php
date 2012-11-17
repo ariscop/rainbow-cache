@@ -498,9 +498,18 @@ class page extends entry {
 		//in apache something format, YYYYMMDDHHmmSS
 		$expire = date('YmdHis', $this->data['expires'] + (3600.0 * $config->tz));
 		
-		$ret .= "RewriteEngine on\n"
-		       ."RewriteCond %{TIME} >".$expire."\n"
-		       ."RewriteRule . /index.php [L]\n\n";
+		$ret .= "RewriteEngine on\n";
+		
+		//timed expire rule
+		$ret .= "RewriteCond %{TIME} >".$expire."\n";
+		
+		//check commentor cookie for this posts signiture
+		//actually just checks entire cookie, doesnt matter if there are a few
+		//false positives
+		if(isset($this->data['post_sig']))
+		$ret .= "RewriteCond %{HTTP_COOKIE} ".$this->data['post_sig']."\n";
+		
+		$ret .= "RewriteRule . /index.php [L]\n\n";
 		
 		$headers = $this->getHeaders();
 		

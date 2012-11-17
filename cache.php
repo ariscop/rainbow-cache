@@ -52,6 +52,13 @@ if($page->stored() && $page->hasHtml()) {
 		$page->delete();
 		$page = new page();
 	} else {
+		//check for comment cookie, dont serve from cache if this client
+		//has commented on this page
+		//TODO: better method of disabling cache than return
+		if(isset($page->data['post_sig']) &&
+			strpos($_SERVER['HTTP_COOKIE'], $page->data['post_sig']))
+			return;
+		
 		//echo status
 		if(isset($page->data['status'])) {
 			header($page->data['status']);
