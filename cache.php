@@ -140,7 +140,6 @@ $callback = function($buffer) use ($page, $config) {
 	setStatus('Miss');
 	
 	//generate and append the footer
-	//TODO: this broke again
 	$start = $page->data['start'];
 	$time  = microtime(true) - $start;	
 	
