@@ -506,7 +506,7 @@ class page extends entry {
 		//check commentor cookie for this posts signiture
 		//actually just checks entire cookie, doesnt matter if there are a few
 		//false positives
-		if(isset($this->data['post_sig']))
+		if(isset($this->data['post_sig']) && is_single())
 		$ret .= "RewriteCond %{HTTP_COOKIE} ".$this->data['post_sig']."\n";
 		
 		$ret .= "RewriteRule . /index.php [L]\n\n";
