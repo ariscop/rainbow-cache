@@ -448,6 +448,10 @@ class page extends entry {
 			if(!is_dir($path)) mkdir($path, 0755, true);
 			file_put_contents($path . '/index.html', $this->getHtml());
 			
+			//set mtime so the server can 304 correctly
+			if(isset($this->data['mtime']))
+				touch($path . '/index.html', $this->data['mtime']);
+			
 			//generate .htaccess
 			$htaccess = $this->generateHtaccess();
 			//this gets written later
@@ -501,22 +505,22 @@ class page extends entry {
 		$ret .= "RewriteEngine on\n";
 		
 		//timed expire rule
-		$ret .= "RewriteCond %{TIME} >".$expire."\n";
+		$ret .= "RewriteCond %{TIME} >".$expire;
 		
 		//check commentor cookie for this posts signiture
 		//actually just checks entire cookie, doesnt matter if there are a few
 		//false positives
 		if(isset($this->data['post_sig']) && is_single())
-		$ret .= "RewriteCond %{HTTP_COOKIE} ".$this->data['post_sig']."\n";
+			$ret .= " [OR]\nRewriteCond %{HTTP_COOKIE} ".$this->data['post_sig'];
 		
-		$ret .= "RewriteRule . /index.php [L]\n\n";
+		$ret .= "\nRewriteRule . /index.php [L]\n\n";
 		
 		$headers = $this->getHeaders();
 		
 		for($x = 0; $x < sizeof($headers); $x++) {
 			$hdr = explode(': ', $headers[$x], 2);
 			//set cache-status header if it exists
-			if($hdr[0] == $config->headerName)
+			if($header && strcmp($hdr[0], $config->headerName) == 0)
 				$hdr[1] = 'Static';
 			$ret .= "Header set ${hdr[0]} '${hdr[1]}'\n";
 		}

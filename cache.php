@@ -132,9 +132,27 @@ $callback = function($buffer) use ($page, $config) {
 		} else goto done;
 	}
 	
-	//TODO: last modified
-	//$post = get_post();
-	//$mtime = get_post_modified_time('U', true, $post)
+	$headers = headers_list();
+	if(is_array($headers)) {
+		for($x = 0; $x < sizeof($headers); $x++) {
+			$hdr = explode(': ', $headers[$x], 2);
+			
+			//don't cache anything with cookies
+			//just in case
+			if(strcmp(strtoupper($hdr[0]), 'SET-COOKIE') == 0)
+				goto done;
+			
+			//or with cache headers, proper handling not yet implimented
+			if(strcmp(strtoupper($hdr[0]), 'CACHE-CONTROL') == 0)
+				goto done;
+			
+		}
+	}
+	
+	//modified time in unix time
+	$mtime = get_post_modified_time('U', true);
+	if($mtime !== false)
+		$page->data['mtime'] = intval($mtime);
 	
 	//inform the client that the page is being generated
 	setStatus('Miss');
@@ -152,16 +170,13 @@ $callback = function($buffer) use ($page, $config) {
 	
 	$buffer = $buffer . page::generateFooter($start, $time, $name);
 	//technically unnecessary but ponies
-
+	
 	//if a lock cant be aquired don't wait, assume it's being cached already
 	if(!$page->lock()) goto done;
 	
-	$headers = headers_list();
-	if(is_array($headers)) {
-		$page->storeHeaders($headers);
-	}
-	
 	$page->storeHtml($buffer);
+	if(is_array($headers))
+		$page->storeHeaders($headers);
 	$page->store();
 
 	return $buffer;
