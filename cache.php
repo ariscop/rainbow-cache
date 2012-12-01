@@ -66,7 +66,7 @@ if($page->stored() && $page->hasHtml()) {
 		//and echo headers if stored
 		if($page->hasHeaders()) {
 			foreach($page->getHeaders() as $k => $v) {
-				header($v, true);
+				header($k.': '.$v, true);
 			}
 		}
 		
@@ -132,18 +132,22 @@ $callback = function($buffer) use ($page, $config) {
 		} else goto done;
 	}
 	
-	$headers = headers_list();
-	if(is_array($headers)) {
-		for($x = 0; $x < sizeof($headers); $x++) {
-			$hdr = explode(': ', $headers[$x], 2);
+	$_headers = headers_list();
+	$headers = array();
+	if(is_array($_headers)) {
+		for($x = 0; $x < sizeof($_headers); $x++) {
+			$hdr = explode(': ', $_headers[$x], 2);
 			
+			$headers[$hdr[0]] = $hdr[1];
+			
+			$hdr[0] = strtoupper($hdr[0]);
 			//don't cache anything with cookies
 			//just in case
-			if(strcmp(strtoupper($hdr[0]), 'SET-COOKIE') == 0)
+			if(strcmp($hdr[0], 'SET-COOKIE') == 0)
 				goto done;
 			
 			//or with cache headers, proper handling not yet implimented
-			if(strcmp(strtoupper($hdr[0]), 'CACHE-CONTROL') == 0)
+			if(strcmp($hdr[0], 'CACHE-CONTROL') == 0)
 				goto done;
 			
 		}
@@ -175,7 +179,7 @@ $callback = function($buffer) use ($page, $config) {
 	if(!$page->lock()) goto done;
 	
 	$page->storeHtml($buffer);
-	if(is_array($headers))
+	if(is_array($_headers))
 		$page->storeHeaders($headers);
 	$page->store();
 

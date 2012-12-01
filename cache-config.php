@@ -504,12 +504,12 @@ class page extends entry {
 		
 		$headers = $this->getHeaders();
 		
-		for($x = 0; $x < sizeof($headers); $x++) {
-			$hdr = explode(': ', $headers[$x], 2);
+		if($config->header)
+			$headers[$config->headerName] = 'Static';
+		
+		foreach($headers as $k => $v) {
 			//set cache-status header if it exists
-			if($header && strcmp($hdr[0], $config->headerName) == 0)
-				$hdr[1] = 'Static';
-			$ret .= "Header set ${hdr[0]} '${hdr[1]}'\n";
+			$ret .= "Header set ${k} '${v}'\n";
 		}
 		
 		if($code > 300 && $code < 304) if($redirect !== null) {
