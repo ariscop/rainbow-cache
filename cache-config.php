@@ -27,9 +27,6 @@ class config {
 
 	//preform static caching using a directory tree
 	public $static = false;
-
-	//or using a RewriteMap
-	public $rewrite = false;
 	
 	//write headers for static cache?
 	public $staticHeaders = true;
@@ -461,22 +458,12 @@ class page extends entry {
 			//by removing the .htaccess file first
 			$this->addFile($path . '/.htaccess');
 			$this->addFile($path);
-		} else if ($config->rewrite) {
-			//store in one folder
-			if(!is_dir($path)) mkdir($path, 0755, true);
-			$name = $path . '/' . $this->getFilename() . '.html';
-			file_put_contents($name, $this->getHtml());
-			$this->addFile($name);
 		}
 		
 		if($htaccess !== false) {
 			//TODO: bug, add ahead of the folder, glob doesnt
 			//catch things starting with .
 			file_put_contents($path . '/.htaccess', $htaccess);
-		}
-			
-		if($name && $config->rewrite) {
-			//TODO: rewrite map
 		}
 	
 	noStatic:

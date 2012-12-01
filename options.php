@@ -61,7 +61,6 @@ if (isset($_POST['save'])) {
 	checkBool('redirect_404');
 	
 	checkBool('static');
-	checkBool('rewrite');
 	
 	checkString('headerName');
 	checkString('maxAge');
@@ -147,9 +146,6 @@ printString('headerName', 'Status header name', 'this will show in http response
 printBool('footer', 'Enable Footer');
 
 printBool('static', 'Enable static caching');
-printBool('rewrite', 'Enable rewrite map');
-//TODO: rewrite map
-//printString('rewritePath', 'Path to rewrite map');
 
 printBool('redirect_404', 'Redirect 404', 'this saves a bit of cpu time by redirecting to /404/');
 //printString('path', 'Cache Path', 'reletive to WP_CONTENT_DIR (' . WP_CONTENT_DIR . ')');
