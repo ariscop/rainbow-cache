@@ -24,6 +24,9 @@ class config {
 
 	//redirect 404's
 	public $redirect_404 = false;
+	
+	//do gzip compression
+	public $gzip = true;
 
 	//preform static caching using a directory tree
 	public $static = false;
