@@ -369,11 +369,15 @@ class page extends entry {
 	}
 	
 	function storeHtml($html) {
-		$this->data['html'] = $html;
+		$this->data['html'] = gzencode($html);
 	}
 	
-	function getHtml() {
-		return isset($this->data['html']) ? $this->data['html'] : false;
+	function getHtml($gzip = false) {
+		if(!isset($this->data['html'])) return false;
+		if($gzip)
+			return $this->data['html'];
+		
+		return gzdecode($this->data['html']); 
 	}
 	
 	function hasHtml() {
