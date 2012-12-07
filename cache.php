@@ -60,12 +60,14 @@ if($page->stored() && $page->hasHtml()) {
 			strpos($_SERVER['HTTP_COOKIE'], $page->data['post_sig']))
 			return;
 		
-		setStatus('Hit');
 		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
 			$_time = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
 			if($page->data['mtime'] <= $_time) {
 				//does  vvvvvvvv matter?
 				header("HTTP/1.1 304 Not Modified", true, 304);
+				
+				//has no effect, but why not
+				setStatus('Hit');
 				
 				flush();
 				die();
@@ -82,6 +84,8 @@ if($page->stored() && $page->hasHtml()) {
 				header($k.': '.$v, true);
 			}
 		}
+		
+		setStatus('Hit');
 		
 		//TODO: impliment gzip
 		print($page->getHtml());
@@ -154,6 +158,10 @@ $callback = function($buffer) use ($page, $config) {
 			header('Last-Modified: ' . $_mtime_h);
 	}
 	
+	//inform the client that the page is being generated
+	setStatus('Miss');
+	
+	//store headers
 	$_headers = headers_list();
 	$headers = array();
 	if(is_array($_headers)) {
@@ -174,9 +182,6 @@ $callback = function($buffer) use ($page, $config) {
 			
 		}
 	}
-	
-	//inform the client that the page is being generated
-	setStatus('Miss');
 	
 	//generate and append the footer
 	$start = $page->data['start'];
