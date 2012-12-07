@@ -49,6 +49,7 @@ $page = page::getEntry();
 if($page->stored() && $page->hasHtml()) {
 	if($page->data['expires'] < microtime(true)) {
 		//cache entry has expired
+		//TODO: move this into entry? silly to have it here
 		$page->delete();
 		$page = new page();
 	} else {
@@ -58,6 +59,18 @@ if($page->stored() && $page->hasHtml()) {
 		if(isset($page->data['post_sig']) &&
 			strpos($_SERVER['HTTP_COOKIE'], $page->data['post_sig']))
 			return;
+		
+		setStatus('Hit');
+		if(isset($_SERVER['HTTP_IF_MODIFIED_SINCE'])) {
+			$_time = strtotime($_SERVER['HTTP_IF_MODIFIED_SINCE']);
+			if($page->data['mtime'] <= $_time) {
+				//does  vvvvvvvv matter?
+				header("HTTP/1.1 304 Not Modified", true, 304);
+				
+				flush();
+				die();
+			}
+		}
 		
 		//echo status
 		if(isset($page->data['status'])) {
@@ -70,7 +83,6 @@ if($page->stored() && $page->hasHtml()) {
 			}
 		}
 		
-		setStatus('Hit');
 		//TODO: impliment gzip
 		print($page->getHtml());
 		flush();
@@ -132,6 +144,16 @@ $callback = function($buffer) use ($page, $config) {
 		} else goto done;
 	}
 	
+	//modified time in unix time
+	$mtime = get_post_modified_time('U', true);
+	if($mtime !== false) {
+		$mtime = intval($mtime);
+		$page->data['mtime'] = $mtime;
+		$_mtime_h = gmdate("D, d M Y H:i:s", $mtime)." GMT";
+		if($config->lastModHeader)
+			header('Last-Modified: ' . $_mtime_h);
+	}
+	
 	$_headers = headers_list();
 	$headers = array();
 	if(is_array($_headers)) {
@@ -152,11 +174,6 @@ $callback = function($buffer) use ($page, $config) {
 			
 		}
 	}
-	
-	//modified time in unix time
-	$mtime = get_post_modified_time('U', true);
-	if($mtime !== false)
-		$page->data['mtime'] = intval($mtime);
 	
 	//inform the client that the page is being generated
 	setStatus('Miss');

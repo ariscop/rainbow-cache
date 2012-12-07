@@ -3,13 +3,6 @@
 require_once("cache-config.php");
 
 class cache_list extends \WP_List_Table {
-// 	function __construct() {
-// 		parent::__construct( array(
-// 			'singular'=> 'wp_list_text_link', //Singular label
-// 			'plural' => 'wp_list_test_links', //plural label, also this well be one of the table css class
-// 			'ajax'  => false //We won't support Ajax for this table
-// 		));
-// 	}
 	
 	function get_columns() {
 		return array(

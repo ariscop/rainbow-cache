@@ -37,6 +37,9 @@ class config {
 	//max post age in seconds
 	public $maxAge = 3600;
 	
+	//add last modified header
+	public $lastModHeader = true;
+	
 	//time zone, required for static cache expirery
 	public $tz = 11;
 	

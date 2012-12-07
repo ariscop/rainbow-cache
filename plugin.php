@@ -16,8 +16,10 @@ not endorsed by hasbro, pls no sue kthx
 
 */
 
+//TODO: checks on activate? 
 //register_activation_hook(__FILE__, 'activate');
 //function activate()
+
 $isCleaned = false;
 
 function cleanCache()
