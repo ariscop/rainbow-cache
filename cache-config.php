@@ -58,6 +58,9 @@ class config {
 	//debug mode, this enables error reporting
 	public $debug = false;
 	
+	//compress html in cache entries
+	public $storeGzip = false;
+	
 	function getPath() {
 		return WP_CONTENT_DIR . $this->path;
 	}
@@ -369,15 +372,23 @@ class page extends entry {
 	}
 	
 	function storeHtml($html) {
-		$this->data['html'] = gzencode($html);
+		global $config;
+		
+		if($config->storeGzip)
+			$this->data['html'] = gzencode($html);
+		else
+			$this->data['html'] = $html;
+		
+		$this->data['isGzip'] = $config->storeGzip;
 	}
 	
 	function getHtml($gzip = false) {
 		if(!isset($this->data['html'])) return false;
-		if($gzip)
-			return $this->data['html'];
 		
-		return gzdecode($this->data['html']); 
+		if($this->data['isGzip'] && !$gzip)
+			return gzdecode($this->data['html']);
+		
+		return $this->data['html']; 
 	}
 	
 	function hasHtml() {
@@ -419,7 +430,7 @@ class page extends entry {
 		$path = $config->getPath() . '/static/' . $this->name . '@/index.html';
 		if(is_file($path))
 			return str_replace($_SERVER['DOCUMENT_ROOT'],
-			                   'http://' . $_SERVER['HTTP_HOST'], $path);
+			                   'http://' . $_SERVER['HTTP_HOST'] . '/', $path, 1);
 		return false;
 	}
 	

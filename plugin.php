@@ -30,7 +30,10 @@ function cleanCache()
 	$callback = function($name) {
 		$data = file_get_contents($name);
 		$data = unserialize($data);
-		$data->delete();
+		if($data instanceof entry)
+			$data->delete();
+		//could be an in progres request,
+		//a cache purge is required to remove these
 	};
 	
 	$dirs = glob($config->getStorePath() . '/*');
