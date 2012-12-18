@@ -27,6 +27,9 @@ class config {
 	
 	//do gzip compression
 	public $gzip = true;
+	
+	//compress html in cache entries
+	public $storeGzip = false;
 
 	//preform static caching using a directory tree
 	public $static = false;
@@ -57,9 +60,6 @@ class config {
 	
 	//debug mode, this enables error reporting
 	public $debug = false;
-	
-	//compress html in cache entries
-	public $storeGzip = false;
 	
 	function getPath() {
 		return WP_CONTENT_DIR . $this->path;

@@ -87,8 +87,12 @@ if($page->stored() && $page->hasHtml()) {
 		
 		setStatus('Hit');
 		
-		//TODO: impliment gzip
-		print($page->getHtml());
+		$gzip = false;
+		if(strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== FALSE) {
+			header('Content-Encoding: gzip');
+			$gzip = true;
+		}
+		print($page->getHtml($gzip));
 		flush();
 		die();
 	}
@@ -205,8 +209,11 @@ $callback = function($buffer) use ($page, $config) {
 		$page->storeHeaders($headers);
 	$page->store();
 
+	if(strpos($_SERVER['HTTP_ACCEPT_ENCODING'], 'gzip') !== FALSE) {
+		$buffer = $page->getHtml(true);
+		header('Content-Encoding: gzip');
+	}
 	return $buffer;
-	//TODO: impliment gzip, parameter for getHtml maybe?
 done:
 	setStatus('Wont');
 	return $buffer;
