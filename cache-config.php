@@ -75,7 +75,14 @@ class config {
 		$serialized = serialize($this);
 		return file_put_contents($configPath, $serialized, LOCK_EX);
 	}
-
+	
+	function _construct() {
+		//active defaults
+		
+		//prevent : breakage on nt and mac
+		//should work on bsd but meh
+		if(PHP_OS != 'Linux') $this->sep = '_';
+	}
 }
 
 $valid = true;
@@ -87,14 +94,6 @@ if(file_exists($configPath))
 if(!($config instanceof Config)) {
 	$valid = false;
 	$config = new Config();
-}
-
-if($config->default) {
-	//active defaults
-
-	//prevent : breakage on nt and mac
-	//should work on bsd but meh
-	if(PHP_OS != 'Linux') $config->sep = '_';
 }
 
 //TODO: limit cache size? atomic opperations on a list
