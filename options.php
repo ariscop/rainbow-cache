@@ -53,6 +53,10 @@ if (isset($_POST['reset'])) {
 if (isset($_POST['save'])) {
 	//need better way to do this
 
+	//create new object, should prevent
+	//wierd serializeation bugs on upgrade
+	$config = new config();
+	
 	checkBool('enabled');
 	checkBool('header');
 	checkBool('footer');
