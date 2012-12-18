@@ -433,7 +433,7 @@ class page extends entry {
 		$path = $config->getPath() . '/static/' . $this->name . '@/index.html';
 		if(is_file($path))
 			return str_replace($_SERVER['DOCUMENT_ROOT'],
-			                   'http://' . $_SERVER['HTTP_HOST'] . '/', $path, 1);
+			                   'http://' . $_SERVER['HTTP_HOST'] . '/', $path);
 		return false;
 	}
 	
