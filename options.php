@@ -105,7 +105,7 @@ function printBool($name, $title, $description='') {
 </tr><?php
 }
 
-function printString($name, $title, $description='') {
+function printString($name, $title, $description='', $prepend='') {
 	global $config;
 	//add random string to garuentee uniqueness
 	$dname = 'sdaf34re_' . $name;
@@ -114,6 +114,7 @@ function printString($name, $title, $description='') {
 		<td>
 			<fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
 				<label for="<?php echo $dname;?>">
+					<?php echo $prepend; ?>
 					<input name="<?php echo $name;?>" type="text" id="<?php echo $dname;?>" value="<?php echo $config->$name; ?>" />
 					<?php echo $description; ?>
 				</label><br />
@@ -155,7 +156,7 @@ printBool('redirect_404', 'Redirect 404', 'this saves a bit of cpu time by redir
 //printString('path', 'Cache Path', 'reletive to WP_CONTENT_DIR (' . WP_CONTENT_DIR . ')');
 printString('path', 'Cache Path', 'entries will be stored under /store and static files will be stored in /static');
 //TODO: link to test/tz.php
-printString('tz', 'UTC Offset', 'Required for static caching');
+printString('tz', 'UTC Offset', 'Required for static caching', 'UTC +');
 printString('maxAge', 'Max age', 'Maximum time to store cached entries');
 //printString('sep', 'Entry delimiter', 'use something other than : on windows');
 printBool('saveVars', 'Save request vars', 'Save $_SERVER and $_COOKIE in the cache entry (Debug feature)');
