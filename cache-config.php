@@ -61,6 +61,9 @@ class config {
 	//debug mode, this enables error reporting
 	public $debug = false;
 	
+	//send content-length header
+	public $noChunks = false;
+	
 	function getPath() {
 		return WP_CONTENT_DIR . $this->path;
 	}

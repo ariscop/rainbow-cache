@@ -92,6 +92,11 @@ if($page->stored() && $page->hasHtml()) {
 			header('Content-Encoding: gzip');
 			$gzip = true;
 		}
+		
+		$data = $page->getHtml($gzip);
+		if($config->noChunks)
+			header('Content-Length: '.strlen($data));
+		
 		print($page->getHtml($gzip));
 		flush();
 		die();
@@ -213,6 +218,9 @@ $callback = function($buffer) use ($page, $config) {
 		$buffer = $page->getHtml(true);
 		header('Content-Encoding: gzip');
 	}
+	if($config->noChunks)
+		header('Content-Length: '.strlen($buffer));
+	
 	return $buffer;
 done:
 	setStatus('Wont');
