@@ -76,7 +76,7 @@ class config {
 		return file_put_contents($configPath, $serialized, LOCK_EX);
 	}
 	
-	function _construct() {
+	function __construct() {
 		//active defaults
 		
 		//prevent : breakage on nt and mac
