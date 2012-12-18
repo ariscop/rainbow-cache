@@ -384,10 +384,14 @@ class page extends entry {
 	function getHtml($gzip = false) {
 		if(!isset($this->data['html'])) return false;
 		
-		if($this->data['isGzip'] && !$gzip)
-			return gzdecode($this->data['html']);
-		
-		return $this->data['html']; 
+		if($this->data['isGzip'])
+			return $gzip ? 
+			           $this->data['html']
+			         : gzdecode($this->data['html']);
+
+		return $gzip ? 
+		           gzencode($this->data['html'])
+		         : $this->data['html'];
 	}
 	
 	function hasHtml() {
