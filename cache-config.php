@@ -47,7 +47,7 @@ class config {
 	public $lastModHeader = true;
 	
 	//time zone, required for static cache expirery
-	public $tz = 11;
+	public $tz = 0;
 	
 	//seperator for cache entry filenames
 	//i like : but that breaks on nt (alternate data streams)
