@@ -192,6 +192,11 @@ $callback = function($buffer) use ($page, $config) {
 		}
 	}
 	
+	//add our own cache-control headers, this should cause clients to revalidate
+	//on every request. make this configurable?
+	header('Cache-Control: public, max-age=0, must-revaliate');
+	$headers['Cache-Control'] = 'public, max-age=0, must-revaliate';
+	
 	//generate and append the footer
 	$start = $page->data['start'];
 	$time  = microtime(true) - $start;	
