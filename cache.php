@@ -97,7 +97,7 @@ if($page->stored() && $page->hasHtml()) {
 		if($config->noChunks)
 			header('Content-Length: '.strlen($data));
 		
-		print($page->getHtml($gzip));
+		print($data);
 		flush();
 		die();
 	}
