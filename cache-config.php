@@ -8,6 +8,7 @@ class config {
 	public $default = true;
 
 	//default to not caching, just in case
+	//TODO: disable static caching as well? RewriteCond -f?
 	public $enabled = false;
 
 	//path to cache dir, appended to WP_CONTENT_DIR

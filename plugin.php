@@ -58,12 +58,11 @@ function purgeCache()
 	$config->save();
 }
 
-
-// register_deactivation_hook(__FILE__, 'deactivate');
-// function deactivate()
-// {
-//     wp_clear_scheduled_hook();
-// }
+//disable cache on deactivation
+register_deactivation_hook(__FILE__, function() use ($config) {
+	$config->enabled = False;
+	$config->save();
+});
 
 add_action('admin_menu', function() {
     add_options_page('Cache', 'Rainbow Cache', 'manage_options', 'rainbow-cache/options.php');
