@@ -182,11 +182,11 @@ $callback = function($buffer) use ($page, $config) {
 			$hdr[0] = strtoupper($hdr[0]);
 			//don't cache anything with cookies
 			//just in case
-			if(strcmp($hdr[0], 'SET-COOKIE') == 0)
+			if($hdr[0] === 'SET-COOKIE')
 				goto done;
 			
 			//or with cache headers, proper handling not yet implimented
-			if(strcmp($hdr[0], 'CACHE-CONTROL') == 0)
+			if($hdr[0] === 'CACHE-CONTROL')
 				goto done;
 			
 		}
