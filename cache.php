@@ -188,6 +188,8 @@ $callback = function($buffer) use ($page, $config) {
 			//or with cache headers, proper handling not yet implimented
 			if($hdr[0] === 'CACHE-CONTROL')
 				goto done;
+			if($hdr[0] === 'VARY')
+				goto done;
 			
 		}
 	}
