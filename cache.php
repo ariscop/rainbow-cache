@@ -210,7 +210,8 @@ $callback = function($buffer) use ($page, $config) {
 	
 	$name = $page->getFilename();
 	
-	$buffer = $buffer . page::generateFooter($start, $time, $name);
+	if(strpos($headers['Content-Type'], 'text/html'))
+		$buffer = $buffer . page::generateFooter($start, $time, $name);
 	//technically unnecessary but ponies
 	
 	//if a lock cant be aquired don't wait, assume it's being cached already
