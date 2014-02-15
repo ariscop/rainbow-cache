@@ -11,6 +11,7 @@ stored in wp-content/cache by default, the object database is under
 TODO
 ----
 no https support, you're either all http or all https
+
 planed to add error pages, never got around to it.
 
 Bugs
