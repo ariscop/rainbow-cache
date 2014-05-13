@@ -1,4 +1,4 @@
-<?php namespace wp\rainbow-cache;
+<?php namespace net\ariscop\rainbow_cache;
 
 /* This file is part of Rainbow Cache
  * 
@@ -31,76 +31,76 @@ require_once("cache-config.php");
 
 //if we're in view mode, include the view page and bugger off
 if($_GET['mode'] == 'view') {
-	include("view.php");
-	return;
+    include("view.php");
+    return;
 }
 
 if (isset($_POST['clean'])) {
-	cleanCache();
-	echo '<div class="updated"><p> Cache Cleaned </p></div>';
+    cleanCache();
+    echo '<div class="updated"><p> Cache Cleaned </p></div>';
 }
 
 if (isset($_POST['purge'])) {
-	purgeCache();
-	echo '<div class="updated"><p> Cache Purged </p></div>';
+    purgeCache();
+    echo '<div class="updated"><p> Cache Purged </p></div>';
 }
 
 function checkBool($name) {
-	global $config;
-	
-	$config->$name = 
-		isset($_POST[$name]) ? true : false;
+    global $config;
+
+    $config->$name =
+        isset($_POST[$name]) ? true : false;
 }
 
 function checkString($name) {
-	global $config;
-	
-	if(isset($_POST[$name]))
-		$config->$name = $_POST[$name];
+    global $config;
+
+    if(isset($_POST[$name]))
+        $config->$name = $_POST[$name];
 }
 
 if (isset($_POST['reset'])) {
-	$config = new config();
-		
-	//save to disk
-	$ret = $config->save();
-	if($ret === false)
-		echo '<div class="updated"><p> Failed to write config file</p></div>';
-	else
-		echo '<div class="updated"><p>Config saved (',$ret,' bytes)</p></div>';
+    $config = new config();
+
+    //save to disk
+    $ret = $config->save();
+    if($ret === false)
+        echo '<div class="updated"><p> Failed to write config file</p></div>';
+    else
+        echo '<div class="updated"><p>Config saved (',$ret,' bytes)</p></div>';
 }
 
 if (isset($_POST['save'])) {
-	//need better way to do this
+    //need better way to do this
 
-	//create new object, should prevent
-	//wierd serializeation bugs on upgrade
-	$config = new config();
-	
-	checkBool('enabled');
-	checkBool('header');
-	checkBool('footer');
-	checkBool('saveVars');
-	checkBool('debug');
-	checkBool('redirect_404');
-	
-	checkBool('static');
-	
-	checkString('headerName');
-	checkString('maxAge');
-	checkString('tz');
-	checkString('path');
-	//checkString('sep');
+    //create new object, should prevent
+    //wierd serializeation bugs on upgrade
+    $config = new config();
 
-	$config->maxAge = intval($config->maxAge);
-	$config->default = false;
+    checkBool('enabled');
+    checkBool('header');
+    checkBool('footer');
+    checkBool('saveVars');
+    checkBool('debug');
+    checkBool('redirect_404');
 
-	//save to disk
-	$ret = $config->save();
-	if($ret === false)
-		echo '<div class="updated"><p> Failed to write config file</p></div>';
-	else
-		echo '<div class="updated"><p>Config saved (',$ret,' bytes)</p></div>';
+    checkBool('static');
+
+    checkString('headerName');
+    checkString('maxAge');
+    checkString('tz');
+    checkString('path');
+    //checkString('sep');
+
+    $config->maxAge = intval($config->maxAge);
+    $config->default = false;
+
+    //save to disk
+    $ret = $config->save();
+    if($ret === false)
+        echo '<div class="updated"><p> Failed to write config file</p></div>';
+    else
+        echo '<div class="updated"><p>Config saved (',$ret,' bytes)</p></div>';
 
 } elseif(!$valid) {
 ?><div class="updated"><p> Configuration file is invalid, please configure and save </p></div><?php
@@ -109,37 +109,37 @@ if (isset($_POST['save'])) {
 //ye gods this is a mess
 
 function printBool($name, $title, $description='') {
-	global $config;
-	//add random string to garuentee uniqueness
-	$dname = 'sdaf34re_' . $name; 
+    global $config;
+    //add random string to garuentee uniqueness
+    $dname = 'sdaf34re_' . $name;
 ?><tr valign="top">
-	<th scope="row"> <?php echo $title; ?></th>
-		<td>
-			<fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
-				<label for="<?php echo $dname;?>">
-					<input name="<?php echo $name;?>" type="checkbox" id="<?php echo $dname;?>" value="1" <?php echo (($config->$name)?'checked':''); ?> />
-					<?php echo $description; ?>
-				</label><br />
-			</fieldset>
-		</td>
+    <th scope="row"> <?php echo $title; ?></th>
+        <td>
+            <fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
+                <label for="<?php echo $dname;?>">
+                    <input name="<?php echo $name;?>" type="checkbox" id="<?php echo $dname;?>" value="1" <?php echo (($config->$name)?'checked':''); ?> />
+                    <?php echo $description; ?>
+                </label><br />
+            </fieldset>
+        </td>
 </tr><?php
 }
 
 function printString($name, $title, $description='', $prepend='') {
-	global $config;
-	//add random string to garuentee uniqueness
-	$dname = 'sdaf34re_' . $name;
+    global $config;
+    //add random string to garuentee uniqueness
+    $dname = 'sdaf34re_' . $name;
 ?><tr valign="top">
-	<th scope="row"> <?php echo $title; ?></th>
-		<td>
-			<fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
-				<label for="<?php echo $dname;?>">
-					<?php echo $prepend; ?>
-					<input name="<?php echo $name;?>" type="text" id="<?php echo $dname;?>" value="<?php echo $config->$name; ?>" />
-					<?php echo $description; ?>
-				</label><br />
-			</fieldset>
-		</td>
+    <th scope="row"> <?php echo $title; ?></th>
+        <td>
+            <fieldset><legend class="screen-reader-text"><span><?php echo $title; ?></span></legend>
+                <label for="<?php echo $dname;?>">
+                    <?php echo $prepend; ?>
+                    <input name="<?php echo $name;?>" type="text" id="<?php echo $dname;?>" value="<?php echo $config->$name; ?>" />
+                    <?php echo $description; ?>
+                </label><br />
+            </fieldset>
+        </td>
 </tr><?php
 }
 
@@ -147,7 +147,7 @@ function printString($name, $title, $description='', $prepend='') {
 $arr = glob($config->getStorePath() . '/*');
 $count = 0;
 if(is_array($arr))
-	$count = count($arr); 
+    $count = count($arr);
 
 ?>
 Cache entrys: <?php echo($count); ?>
@@ -164,7 +164,7 @@ Cache entrys: <?php echo($count); ?>
 //TODO: hide some of these as 'advance' options
 printBool('enabled', 'Enable Cache');
 
- 
+
 printBool('header', 'Enable status header');
 printString('headerName', 'Status header name', 'this will show in http response headers');
 
