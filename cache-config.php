@@ -42,9 +42,6 @@ class config {
     //enable ascii art page footer
     public $footer = true;
 
-    //redirect 404's
-    public $redirect_404 = false;
-
     //do gzip compression
     public $gzip = true;
 

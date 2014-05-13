@@ -239,8 +239,5 @@ add_filter('redirect_canonical', '', 10, 2);
 add_filter('wp_redirect_status', $_onRedirect, 10, 2);
 add_filter('status_header', $_statusHeaderCallback);
 
-if($config->redirect_404) {
-    add_filter('status_header', $_404_callback, 0, 1);
-}
 
 

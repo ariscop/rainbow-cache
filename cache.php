@@ -127,17 +127,6 @@ if(hasCookie('comment_') === true) {
     return;
 }
 
-$_404_callback = function ($header) {
-    //this will be called right before the headers are sent
-    //we can catch 404's and cache handle them before page generation
-    if($_SERVER['REQUEST_URI'] != '/404/' && substr($header, 9, 3) == '404') {
-        header('Location: /404/');
-        flush();
-        die();
-    }
-    return $header;
-};
-
 $page->data['redirect'] = '';
 
 //there is seriously no other way to do this, its anoying
@@ -170,11 +159,8 @@ $callback = function($buffer) use ($page, $config) {
     }
     $page->data['code'] = $code;
 
-    if(is_404() || $code == 404) {
-        if($config->redirect_404 && $_SERVER['REQUEST_URI'] == '/404/') {
-            //cache this 404
-        } else goto done;
-    }
+    if(is_404() || $code == 404)
+        goto done;
 
     //modified time in unix time
     $mtime = get_post_modified_time('U', true);
